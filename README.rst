@@ -1,13 +1,78 @@
 CryptoKey
 =========
 
-Python (>= 3.5) library for pluggable asymmetric low-level encryption.
+Python (>= 3.7) library for asymmetric cryptography with algorithms such as RSA and ECC.
 
-Goals
------
+Various backends implement wrappers around other crypto libraries (such as https://cryptography.io/)
+and makes them available using a unified API. The actual cryptographic operations are carried out
+by those backend libraries.
 
-- Provide a pluggable API for asymmetric keys in pure python.
-- Plays nicely with asynchronous frameworks.
-- Theoretical support for all kinds of cryptographic backends, such as openssl,
-  your favourite HSM or smartcard, cloud HSMs, your own ECC implementation (don't!), etc.
-- No dependencies on any libraries.
+No hard dependencies on any non-python libraries such as OpenSSL exist.
+
+CryptoKey is meant to be used by other libraries that need to carry out cryptographic
+operations. That could e.g. be an ACME client, TrustedTimeStamp service or an SSH client.
+
+Users can implement their own backends to utilise their favourite HSM or smartcard,
+cloud HSMs or their own ECC implementation (don't!), etc.
+
+CryptoKey can thus be seen as a python alternative to PKCS#11.
+
+There are high-level interfaces such as `key.sign(msg)` which just do the right thing,
+and low-level interfaces such as `rsakey.sign_int` to calculate `s = m ** d % n` which,
+if used incorrectly, opens up security holes.
+
+Implementations for padding schemes such as PSS are given. They can be used for low-level
+plumbing like extracting the salt from a PSS signature or creating a PSS signature with a
+specific salt.
+
+One stated goal is to provide interfaces for unsafe operations too.
+If you want to shoot yourself in the foot, here's the tool to do it!
+
+Examples
+========
+
+Sign a message::
+   from asyncio import run
+   from cryptography.hazmat.primitives import serialization
+   from cryptokey.backend.cryptography import backend
+   from cryptokey.backend.cryptography.rsa import RsaPrivateKey
+
+   # Load a private key using normal cryptography.io operations.
+   with open('private.key', 'rb') as fp:
+      cryptography_key = serialization.load_pem_private_key(
+         fp.read(),
+         password=None,
+         backend=backend,
+      )
+
+   # Create wrapper
+   key = RsaPrivateKey(cryptography_key)
+
+   # Sign a message. By default, PSS and SHA2_256 are used. The
+   # signature object also contains the parameters that were used.
+   sig = run(key.sign(b'Hello, World!'))
+
+   # Write signature to a file.
+   with open('hello.sig', 'wb') as fp:
+      fp.write(sig.value)
+
+Verifying the signature using openssl::
+   echo -n 'Hello, World!' | openssl sha256 -binary | openssl pkeyutl \
+      -verify -inkey private.key -sigfile hello.sig -pkeyopt digest:sha256 \
+      -pkeyopt rsa_padding_mode:pss
+
+Solving homework::
+   from asyncio import run
+   from cryptokey.backend.textbook.rsa import TextbookRsaPrivateKey
+
+   key = TextbookRsaPrivateKey(public_exponent=7, primes=(17, 31))
+   print(f'Private exponent: {key.private_exponent}')
+   print(f'Signature for M=2: {run(key.sign_int(2)).int_value}')
+
+Security
+--------
+This library is supposed to be just as (in)secure as the used backend.
+If in doubt, use the `cryptography` backend, which builds upon OpenSSL.
+
+The `textbook` backend is deliberately insecure and should not be used for
+real applications.

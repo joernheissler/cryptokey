@@ -1,0 +1,20 @@
+backends:
+    partial, e.g. apply padding and let actual implementation generate a signature; can be used by other backends
+    textbook, e.g. c = m^e%n; load/save/generate keys from/to pem/der using asn1crypto
+    hashlib (python stdlib)
+    cryptography
+    pkcs#11; use sub process? or cffi?
+    openpgp smartcard via different transports; create generic smartcard en/de coder
+    some clouds
+    pynacl
+
+
+# XXX https://en.wikipedia.org/wiki/Integrated_Encryption_Scheme
+# XXX https://en.wikipedia.org/wiki/ElGamal_encryption
+# XXX https://en.wikipedia.org/wiki/ElGamal_signature_scheme
+# XXX ECDSA? What about ED? Stuff encryption and signatures into the same class?
+
+
+API to get supported algorithms, ciphers, etc.
+
+- openssl genpkey -algorithm rsa-pss
