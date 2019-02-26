@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+from asyncio import run
+from contextlib import contextmanager, suppress
+
+from asn1crypto.core import UTF8String
+from asn1crypto.pem import armor
+
+import pkcs11
+from cryptokey.asn1utils import build_csr
+from cryptokey.backend.pkcs11.rsa import Pkcs11RsaPrivateKey
+
+
+@contextmanager
+def open_sig_key(lib_path: str, user_pin: str) -> pkcs11.types.PrivateKey:
+    """
+    Horrible function to return an opened private key.
+    Maybe the python-pkcs11 library is buggy, or maybe I just didn't understand it...
+    """
+    lib = pkcs11.lib(lib_path)
+
+    success = False
+    with suppress(pkcs11.exceptions.TokenNotPresent):
+        for token in lib.get_tokens():
+            with suppress(pkcs11.exceptions.PinLocked):
+                with token.open(user_pin=user_pin) as sess:
+                    with suppress(pkcs11.exceptions.NoSuchKey):
+                        key = sess.get_key(key_type=pkcs11.KeyType.RSA, object_class=pkcs11.ObjectClass.PRIVATE_KEY)
+                        success = True
+                        yield key
+                        return
+
+    if not success:
+        raise Exception('No usable token found')
+
+
+with open_sig_key('/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so', 'asdfghjk12345678') as key:
+    priv = Pkcs11RsaPrivateKey(key)
+    subject = [
+        ('country_name', UTF8String('Roma')),
+        ('common_name', UTF8String('Titus Flavius Vespasianus')),
+    ]
+    csr = run(build_csr(priv, subject, []))
+    print(armor('CERTIFICATE REQUEST', csr).decode(), end="")
