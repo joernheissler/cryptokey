@@ -31,7 +31,11 @@ If you want to shoot yourself in the foot, here's the tool to do it!
 Examples
 ========
 
-Sign a message::
+Sign a message
+--------------
+
+.. code-block:: python
+
    from asyncio import run
    from cryptography.hazmat.primitives import serialization
    from cryptokey.backend.cryptography import backend
@@ -56,12 +60,20 @@ Sign a message::
    with open('hello.sig', 'wb') as fp:
       fp.write(sig.value)
 
-Verifying the signature using openssl::
-   echo -n 'Hello, World!' | openssl sha256 -binary | openssl pkeyutl \
-      -verify -inkey private.key -sigfile hello.sig -pkeyopt digest:sha256 \
-      -pkeyopt rsa_padding_mode:pss
+Verifying the signature using openssl
+-------------------------------------
 
-Solving homework::
+.. code-block:: sh
+
+   echo -n 'Hello, World!' | openssl sha256 -binary | openssl pkeyutl \
+        -verify -inkey private.key -sigfile hello.sig                 \
+        -pkeyopt digest:sha256 -pkeyopt rsa_padding_mode:pss
+
+Solving homework
+----------------
+
+.. code-block:: python
+
    from asyncio import run
    from cryptokey.backend.textbook.rsa import TextbookRsaPrivateKey
 
@@ -70,7 +82,7 @@ Solving homework::
    print(f'Signature for M=2: {run(key.sign_int(2)).int_value}')
 
 Security
---------
+========
 This library is supposed to be just as (in)secure as the used backend.
 If in doubt, use the `cryptography` backend, which builds upon OpenSSL.
 
