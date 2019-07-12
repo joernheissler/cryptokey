@@ -78,7 +78,7 @@ class HashlibHash(hashes.HashFunction):
 
 
 def _blake2_len(params: hashes.HashParameters) -> Dict[str, int]:
-    return {'digest_size': cast(hashes.Blake2Params, params).length}
+    return {"digest_size": cast(hashes.Blake2Params, params).length}
 
 
 def _shake_len(params: hashes.HashParameters) -> int:
@@ -86,30 +86,26 @@ def _shake_len(params: hashes.HashParameters) -> int:
 
 
 _algos = {
-    HashAlgorithmId.BLAKE2B: ('blake2b', _blake2_len, None, None),
-    HashAlgorithmId.BLAKE2S: ('blake2s', _blake2_len, None, None),
-
-    HashAlgorithmId.MD5: ('md5', None, None, None),
-    HashAlgorithmId.RIPEMD_160: ('ripemd160', None, None, None),
-    HashAlgorithmId.SHA1: ('sha1', None, None, None),
-    HashAlgorithmId.SHA2_224: ('sha224', None, None, None),
-    HashAlgorithmId.SHA2_256: ('sha256', None, None, None),
-    HashAlgorithmId.SHA2_384: ('sha384', None, None, None),
-    HashAlgorithmId.SHA2_512: ('sha512', None, None, None),
-    HashAlgorithmId.SHA2_512_224: ('sha512-224', None, None, None),
-    HashAlgorithmId.SHA2_512_256: ('sha512-256', None, None, None),
-
-    HashAlgorithmId.SHA3_224: ('sha3_224', None, None, None),
-    HashAlgorithmId.SHA3_256: ('sha3_256', None, None, None),
-    HashAlgorithmId.SHA3_384: ('sha3_384', None, None, None),
-    HashAlgorithmId.SHA3_512: ('sha3_512', None, None, None),
-
-    HashAlgorithmId.SHAKE_128: ('shake_128', None, 16, None),
-    HashAlgorithmId.SHAKE_256: ('shake_256', None, 32, None),
-    HashAlgorithmId.SHAKE_128_LEN: ('shake_128', None, _shake_len, _shake_len),
-    HashAlgorithmId.SHAKE_256_LEN: ('shake_256', None, _shake_len, _shake_len),
-
-    HashAlgorithmId._TEST_DUMMY: ('test_dummy', None, None, None),
+    HashAlgorithmId.BLAKE2B: ("blake2b", _blake2_len, None, None),
+    HashAlgorithmId.BLAKE2S: ("blake2s", _blake2_len, None, None),
+    HashAlgorithmId.MD5: ("md5", None, None, None),
+    HashAlgorithmId.RIPEMD_160: ("ripemd160", None, None, None),
+    HashAlgorithmId.SHA1: ("sha1", None, None, None),
+    HashAlgorithmId.SHA2_224: ("sha224", None, None, None),
+    HashAlgorithmId.SHA2_256: ("sha256", None, None, None),
+    HashAlgorithmId.SHA2_384: ("sha384", None, None, None),
+    HashAlgorithmId.SHA2_512: ("sha512", None, None, None),
+    HashAlgorithmId.SHA2_512_224: ("sha512-224", None, None, None),
+    HashAlgorithmId.SHA2_512_256: ("sha512-256", None, None, None),
+    HashAlgorithmId.SHA3_224: ("sha3_224", None, None, None),
+    HashAlgorithmId.SHA3_256: ("sha3_256", None, None, None),
+    HashAlgorithmId.SHA3_384: ("sha3_384", None, None, None),
+    HashAlgorithmId.SHA3_512: ("sha3_512", None, None, None),
+    HashAlgorithmId.SHAKE_128: ("shake_128", None, 16, None),
+    HashAlgorithmId.SHAKE_256: ("shake_256", None, 32, None),
+    HashAlgorithmId.SHAKE_128_LEN: ("shake_128", None, _shake_len, _shake_len),
+    HashAlgorithmId.SHAKE_256_LEN: ("shake_256", None, _shake_len, _shake_len),
+    HashAlgorithmId._TEST_DUMMY: ("test_dummy", None, None, None),
 }
 
 

@@ -64,7 +64,7 @@ def test_neutral_bool() -> None:
 
 
 def test_point_not_on_curve() -> None:
-    with pytest.raises(ValueError, match='not on curve'):
+    with pytest.raises(ValueError, match="not on curve"):
         CurvePoint(CurveId.NIST_P_256, 10, 20)
 
 

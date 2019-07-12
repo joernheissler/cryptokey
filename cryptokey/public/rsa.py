@@ -58,11 +58,11 @@ class PssOptions:
     salt: Optional[bytes] = None
 
     # Value of trailer field. Usually only BC is supported.
-    trailer_field: bytes = b'\xbc'
+    trailer_field: bytes = b"\xbc"
 
     def __post_init__(self) -> None:
         if self.salt_length is not None and self.salt is not None and self.salt_length != len(self.salt):
-            raise ValueError('salt_length != len(salt)')
+            raise ValueError("salt_length != len(salt)")
 
 
 def i2osp(x: int, x_len: int) -> bytes:
@@ -71,7 +71,7 @@ def i2osp(x: int, x_len: int) -> bytes:
     https://tools.ietf.org/html/rfc8017#section-4.1
     """
 
-    return int(x).to_bytes(x_len, 'big')
+    return int(x).to_bytes(x_len, "big")
 
 
 def os2ip(x: ByteString) -> int:
@@ -79,7 +79,7 @@ def os2ip(x: ByteString) -> int:
     OctetString to Integer Primitive:
     https://tools.ietf.org/html/rfc8017#section-4.2
     """
-    return int.from_bytes(x, 'big')
+    return int.from_bytes(x, "big")
 
 
 class RsaPublicKey(PublicKey):
@@ -150,7 +150,7 @@ class RsaPrivateKey(PrivateKey):
         elif self.default_scheme == RsaScheme.PSS:
             return pss.parse_pss_options(self.public, self.default_hash_algorithm, self.default_pss_options)
         else:
-            raise Exception(f'Unsupported scheme: {self.default_scheme}')
+            raise Exception(f"Unsupported scheme: {self.default_scheme}")
 
     @property
     @abstractmethod
@@ -248,6 +248,7 @@ class RsaSignatureMetadata(SignatureMetadata):
     """
     Meta data for RSA signatures. Extended by scheme specific sub classes.
     """
+
     scheme: RsaScheme
 
 
@@ -261,6 +262,7 @@ class MgfMetadata:
     """
     Meta data for MGF. Extended by mgf specific sub classes.
     """
+
     algorithm_id: MgfAlgorithmId
 
 
@@ -269,6 +271,7 @@ class Mgf1Metadata(MgfMetadata):
     """
     Meta data for MGF1.
     """
+
     hash_alg: HashAlgorithm
 
 
@@ -277,6 +280,7 @@ class OtherMgfMetadata(MgfMetadata):
     """
     Meta data for other custom algorithms.
     """
+
     params: Any
 
 
@@ -295,14 +299,19 @@ class RsaSignature(Signature):
     int_value: int
     bytes_value: bytes
 
-    def __init__(self, key: RsaPublicKey, meta: RsaSignatureMetadata, int_value: Optional[int] = None,
-                 bytes_value: Optional[ByteString] = None) -> None:
+    def __init__(
+        self,
+        key: RsaPublicKey,
+        meta: RsaSignatureMetadata,
+        int_value: Optional[int] = None,
+        bytes_value: Optional[ByteString] = None,
+    ) -> None:
         self.key = key
         self.meta = meta
 
         if bytes_value is not None:
             if int_value is not None:
-                raise TypeError('Need bytes_value xor int_value')
+                raise TypeError("Need bytes_value xor int_value")
             self.bytes_value = bytes(bytes_value)
             self.int_value = os2ip(bytes_value)
 
@@ -310,12 +319,12 @@ class RsaSignature(Signature):
             if len(bytes_value) != self.key.modlen:
                 self.bytes_value = i2osp(self.int_value, self.key.modlen)
         elif int_value is None:
-            raise TypeError('Need bytes_value xor int_value')
+            raise TypeError("Need bytes_value xor int_value")
         elif int_value < 0:
-            raise ValueError('Signature is negative')
+            raise ValueError("Signature is negative")
         else:
             self.int_value = int_value
             self.bytes_value = i2osp(int_value, self.key.modlen)
 
         if self.int_value >= self.key.modulus:
-            raise ValueError('Signature is not smaller than modulus')
+            raise ValueError("Signature is not smaller than modulus")

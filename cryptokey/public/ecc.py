@@ -8,11 +8,13 @@ from typing import Union
 # openssl ecparam -list_curves
 # https://safecurves.cr.yp.to/
 
+# fmt: off
 CurveId = Enum('CurveId', [
     'NIST_P_256',   # secp256r1, prime256v1
     'NIST_P_384',   # secp384r1
     'NIST_P_521',   # secp384r1
 ])
+# fmt: on
 
 
 @dataclass

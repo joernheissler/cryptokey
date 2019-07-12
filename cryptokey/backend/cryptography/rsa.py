@@ -36,20 +36,17 @@ class RsaPublicKey(rsa.RsaPublicKey):
 
     def export_public_der(self) -> bytes:
         return self._pubkey.public_bytes(
-            encoding=serialization.Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
 
     def export_public_pem(self) -> str:
         return self._pubkey.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo
         ).decode()
 
     def export_public_openssh(self) -> str:
         return self._pubkey.public_bytes(
-            encoding=serialization.Encoding.OpenSSH,
-            format=serialization.PublicFormat.OpenSSH,
+            encoding=serialization.Encoding.OpenSSH, format=serialization.PublicFormat.OpenSSH
         ).decode()
 
     # def validate(self) -> None:
@@ -86,20 +83,22 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
             raise TypeError()
         primes = key.primes
         if len(primes) < 2:
-            raise ValueError('Need at least 2 primes')
+            raise ValueError("Need at least 2 primes")
         if len(primes) > 2:
-            raise NotImplementedError('Cryptography does not support multi-prime RSA')
+            raise NotImplementedError("Cryptography does not support multi-prime RSA")
 
         exp = key.private_exponent
-        return cls(cr_rsa.RSAPrivateNumbers(
-            primes[1],  # XXX order of primes?
-            primes[0],
-            exp,
-            cr_rsa.rsa_crt_dmp1(exp, primes[1]),
-            cr_rsa.rsa_crt_dmq1(exp, primes[0]),
-            cr_rsa.rsa_crt_iqmp(primes[1], primes[0]),
-            RsaPublicKey.from_key(key.public)._public_numbers,
-        ).private_key(backend))
+        return cls(
+            cr_rsa.RSAPrivateNumbers(
+                primes[1],  # XXX order of primes?
+                primes[0],
+                exp,
+                cr_rsa.rsa_crt_dmp1(exp, primes[1]),
+                cr_rsa.rsa_crt_dmq1(exp, primes[0]),
+                cr_rsa.rsa_crt_iqmp(primes[1], primes[0]),
+                RsaPublicKey.from_key(key.public)._public_numbers,
+            ).private_key(backend)
+        )
 
     @property
     def public(self) -> RsaPublicKey:
@@ -140,7 +139,7 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
         if self.default_scheme == rsa.RsaScheme.PKCS1v1_5:
             return await self.sign_v15_digest(digest)
 
-        raise Exception(f'Bad default scheme: {self.default_scheme}')
+        raise Exception(f"Bad default scheme: {self.default_scheme}")
 
     async def sign(self, msg: bytes) -> rsa.RsaSignature:
         if self.default_scheme == rsa.RsaScheme.PSS:
@@ -149,7 +148,7 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
         if self.default_scheme == rsa.RsaScheme.PKCS1v1_5:
             return await self.sign_v15(msg)
 
-        raise Exception(f'Bad default scheme: {self.default_scheme}')
+        raise Exception(f"Bad default scheme: {self.default_scheme}")
 
     # async def decrypt(self, ciphertext: bytes) -> bytes:
     #     raise NotImplementedError()
@@ -160,7 +159,9 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
     async def sign_v15(self, msg: bytes, hash_alg: Optional[HashAlgorithm] = None) -> rsa.RsaSignature:
         return self._sign_v15(msg, hash_alg or self.default_hash_algorithm, False)
 
-    async def sign_pss_digest(self, dgst: MessageDigest, options: Optional[rsa.PssOptions] = None) -> rsa.RsaSignature:
+    async def sign_pss_digest(
+        self, dgst: MessageDigest, options: Optional[rsa.PssOptions] = None
+    ) -> rsa.RsaSignature:
         return self._sign_pss(dgst.value, options, dgst.algorithm)
 
     async def sign_pss(self, msg: bytes, options: Optional[rsa.PssOptions] = None) -> rsa.RsaSignature:
@@ -172,25 +173,24 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
         return rsa.RsaSignature(
             key=self.public,
             bytes_value=self._privkey.sign(
-                data,
-                cr_padding.PKCS1v15(),
-                cr_utils.Prehashed(h_alg) if is_pre else h_alg,
+                data, cr_padding.PKCS1v15(), cr_utils.Prehashed(h_alg) if is_pre else h_alg
             ),
             meta=rsa.RsaV15Metadata(AsymmetricAlgorithm.RSA, rsa.RsaScheme.PKCS1v1_5, hash_alg),
         )
 
-    def _sign_pss(self, data: bytes, options: Optional[rsa.PssOptions],
-                  pre_hash_alg: Optional[HashAlgorithm] = None) -> rsa.RsaSignature:
+    def _sign_pss(
+        self, data: bytes, options: Optional[rsa.PssOptions], pre_hash_alg: Optional[HashAlgorithm] = None
+    ) -> rsa.RsaSignature:
 
         opt = options or self.default_pss_options
         hash_alg = opt and opt.hash_alg or self.default_hash_algorithm
         meta = pss.parse_pss_options(self.public, hash_alg, opt, pre_hash_alg)
         if meta.mgf_alg.algorithm_id != rsa.MgfAlgorithmId.MGF1:
-            raise NotImplementedError(f'Unsupported algorithm: {meta.mgf_alg.algorithm_id}')
-        if meta.trailer_field != b'\xbc':
-            raise NotImplementedError('Only BC trailer supported')
+            raise NotImplementedError(f"Unsupported algorithm: {meta.mgf_alg.algorithm_id}")
+        if meta.trailer_field != b"\xbc":
+            raise NotImplementedError("Only BC trailer supported")
         if options and options.salt is not None:
-            raise NotImplementedError('Custom salt not supported')
+            raise NotImplementedError("Custom salt not supported")
 
         mgf1_hash_alg = cast(rsa.Mgf1Metadata, meta.mgf_alg).hash_alg
 
@@ -198,15 +198,8 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
 
         sig = self._privkey.sign(
             data,
-            cr_padding.PSS(
-                mgf=cr_padding.MGF1(create_hash(mgf1_hash_alg)),
-                salt_length=meta.salt_length,
-            ),
+            cr_padding.PSS(mgf=cr_padding.MGF1(create_hash(mgf1_hash_alg)), salt_length=meta.salt_length),
             cr_utils.Prehashed(h_alg) if pre_hash_alg else h_alg,
         )
 
-        return rsa.RsaSignature(
-            key=self.public,
-            bytes_value=sig,
-            meta=meta,
-        )
+        return rsa.RsaSignature(key=self.public, bytes_value=sig, meta=meta)

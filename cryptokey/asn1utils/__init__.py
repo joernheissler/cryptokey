@@ -12,25 +12,21 @@ from .. import hashes
 from ..public import ecc, ecdsa, key, rsa
 
 _rsa_v15_algo_map = {
-    hashes.HashAlgorithmId.MD5: 'md5_rsa',
-    hashes.HashAlgorithmId.SHA1: 'sha1_rsa',
-    hashes.HashAlgorithmId.SHA2_224: 'sha224_rsa',
-    hashes.HashAlgorithmId.SHA2_256: 'sha256_rsa',
-    hashes.HashAlgorithmId.SHA2_384: 'sha384_rsa',
-    hashes.HashAlgorithmId.SHA2_512: 'sha512_rsa',
-    hashes.HashAlgorithmId.SHA3_224: 'sha3_224_rsa',
-    hashes.HashAlgorithmId.SHA3_256: 'sha3_256_rsa',
-    hashes.HashAlgorithmId.SHA3_384: 'sha3_384_rsa',
-    hashes.HashAlgorithmId.SHA3_512: 'sha3_512_rsa',
+    hashes.HashAlgorithmId.MD5: "md5_rsa",
+    hashes.HashAlgorithmId.SHA1: "sha1_rsa",
+    hashes.HashAlgorithmId.SHA2_224: "sha224_rsa",
+    hashes.HashAlgorithmId.SHA2_256: "sha256_rsa",
+    hashes.HashAlgorithmId.SHA2_384: "sha384_rsa",
+    hashes.HashAlgorithmId.SHA2_512: "sha512_rsa",
+    hashes.HashAlgorithmId.SHA3_224: "sha3_224_rsa",
+    hashes.HashAlgorithmId.SHA3_256: "sha3_256_rsa",
+    hashes.HashAlgorithmId.SHA3_384: "sha3_384_rsa",
+    hashes.HashAlgorithmId.SHA3_512: "sha3_512_rsa",
 }
 
-_ecc_curves_map = {
-    ecc.CurveId.NIST_P_256: NamedCurve('secp256r1'),
-}
+_ecc_curves_map = {ecc.CurveId.NIST_P_256: NamedCurve("secp256r1")}
 
-_ecdsa_algo_map = {
-    hashes.HashAlgorithmId.SHA2_256: 'sha256_ecdsa',
-}
+_ecdsa_algo_map = {hashes.HashAlgorithmId.SHA2_256: "sha256_ecdsa"}
 
 
 def get_spki(pubkey: key.PublicKey) -> Dict[str, Any]:
@@ -44,7 +40,7 @@ def get_spki(pubkey: key.PublicKey) -> Dict[str, Any]:
     if pubkey.algorithm == key.AsymmetricAlgorithm.ECDSA:
         return get_spki_ec(cast(ecdsa.EccPublicKey, pubkey))
 
-    raise NotImplementedError(f'Algorithm {pubkey.algorithm} not supported')
+    raise NotImplementedError(f"Algorithm {pubkey.algorithm} not supported")
 
 
 def get_spki_rsa(pub: rsa.RsaPublicKey) -> Dict[str, Any]:
@@ -53,14 +49,8 @@ def get_spki_rsa(pub: rsa.RsaPublicKey) -> Dict[str, Any]:
     """
     # rfc3279/2.3.1
     return {
-        'algorithm': {
-            'algorithm': 'rsa',
-            'parameters': Null(),
-        },
-        'public_key': {
-            'modulus': pub.modulus,
-            'public_exponent': pub.public_exponent,
-        },
+        "algorithm": {"algorithm": "rsa", "parameters": Null()},
+        "public_key": {"modulus": pub.modulus, "public_exponent": pub.public_exponent},
     }
 
 
@@ -69,11 +59,8 @@ def get_spki_ec(pub: ecdsa.EccPublicKey) -> Dict[str, Any]:
     Generate "SubjectPublicKeyInfo" structure for EC.
     """
     return {
-        'algorithm': {
-            'algorithm': 'ec',
-            'parameters': _ecc_curves_map[pub.curve_id],
-        },
-        'public_key': ECPointBitString.from_coords(pub.point.x, pub.point.y),
+        "algorithm": {"algorithm": "ec", "parameters": _ecc_curves_map[pub.curve_id]},
+        "public_key": ECPointBitString.from_coords(pub.point.x, pub.point.y),
     }
 
 
@@ -87,7 +74,7 @@ def get_sig_alg(sig: key.Signature) -> Dict[str, Any]:
     if sig.meta.algorithm == key.AsymmetricAlgorithm.ECDSA:
         return get_sig_alg_ecdsa(cast(ecdsa.EcdsaSignature, sig))
 
-    raise NotImplementedError(f'Algorithm {sig.meta.algorithm} not supported')
+    raise NotImplementedError(f"Algorithm {sig.meta.algorithm} not supported")
 
 
 def get_sig_bytes(sig: key.Signature) -> bytes:
@@ -100,7 +87,7 @@ def get_sig_bytes(sig: key.Signature) -> bytes:
     if sig.meta.algorithm == key.AsymmetricAlgorithm.ECDSA:
         return cast(ecdsa.EcdsaSignature, sig).der
 
-    raise NotImplementedError(f'Algorithm {sig.meta.algorithm} not supported')
+    raise NotImplementedError(f"Algorithm {sig.meta.algorithm} not supported")
 
 
 def get_sig_alg_rsa(sig: rsa.RsaSignature) -> Dict[str, Any]:
@@ -113,7 +100,7 @@ def get_sig_alg_rsa(sig: rsa.RsaSignature) -> Dict[str, Any]:
     if sig.meta.scheme == rsa.RsaScheme.PSS:
         return get_sig_alg_rsa_pss(cast(rsa.RsaPssMetadata, sig.meta))
 
-    raise NotImplementedError(f'Scheme {sig.meta.scheme} not supported')
+    raise NotImplementedError(f"Scheme {sig.meta.scheme} not supported")
 
 
 def get_sig_alg_rsa_v15(meta: rsa.RsaV15Metadata) -> Dict[str, Any]:
@@ -123,12 +110,9 @@ def get_sig_alg_rsa_v15(meta: rsa.RsaV15Metadata) -> Dict[str, Any]:
     try:
         algo = _rsa_v15_algo_map[meta.hash_alg.algorithm_id]
     except KeyError:
-        raise NotImplementedError(f'Hash algorithm {meta.hash_alg.algorithm_id} not supported')
+        raise NotImplementedError(f"Hash algorithm {meta.hash_alg.algorithm_id} not supported")
 
-    return {
-        'algorithm': algo,
-        'parameters': {},
-    }
+    return {"algorithm": algo, "parameters": {}}
 
 
 def get_sig_alg_rsa_pss(meta: rsa.RsaPssMetadata) -> Dict[str, Any]:
@@ -137,28 +121,22 @@ def get_sig_alg_rsa_pss(meta: rsa.RsaPssMetadata) -> Dict[str, Any]:
     """
 
     if meta.mgf_alg.algorithm_id != rsa.MgfAlgorithmId.MGF1:
-        raise NotImplementedError(f'MGF algorithm {meta.mgf_alg.algorithm_id} not supported')
+        raise NotImplementedError(f"MGF algorithm {meta.mgf_alg.algorithm_id} not supported")
     mgf1_params = cast(rsa.Mgf1Metadata, meta.mgf_alg)
 
     # XXX change types to disallow None
     assert mgf1_params.hash_alg
 
     return {
-        'algorithm': 'rsassa_pss',
-        'parameters': {
-            'hash_algorithm': {
-                'algorithm': str(hashes.get_algo_oid(meta.hash_alg)),
-                'parameters': {},
+        "algorithm": "rsassa_pss",
+        "parameters": {
+            "hash_algorithm": {"algorithm": str(hashes.get_algo_oid(meta.hash_alg)), "parameters": {}},
+            "mask_gen_algorithm": {
+                "algorithm": "mgf1",
+                "parameters": {"algorithm": str(hashes.get_algo_oid(mgf1_params.hash_alg)), "parameters": {}},
             },
-            'mask_gen_algorithm': {
-                'algorithm': 'mgf1',
-                'parameters': {
-                    'algorithm': str(hashes.get_algo_oid(mgf1_params.hash_alg)),
-                    'parameters': {},
-                },
-            },
-            'salt_length': meta.salt_length,
-            'trailer_field': 'trailer_field_bc',
+            "salt_length": meta.salt_length,
+            "trailer_field": "trailer_field_bc",
         },
     }
 
@@ -170,35 +148,34 @@ def get_sig_alg_ecdsa(sig: ecdsa.EcdsaSignature) -> Dict[str, Any]:
     try:
         algo = _ecdsa_algo_map[sig.meta.hash_alg.algorithm_id]
     except KeyError:
-        raise NotImplementedError(f'Hash algorithm {sig.meta.hash_alg.algorithm_id} not supported')
+        raise NotImplementedError(f"Hash algorithm {sig.meta.hash_alg.algorithm_id} not supported")
 
-    return {
-        'algorithm': algo,
-    }
+    return {"algorithm": algo}
 
 
-async def build_csr(priv: key.PrivateKey, subject: Sequence[Tuple[str, Any]],
-                    attributes: Optional[List[Mapping[str, Any]]] = None) -> bytes:
+async def build_csr(
+    priv: key.PrivateKey,
+    subject: Sequence[Tuple[str, Any]],
+    attributes: Optional[List[Mapping[str, Any]]] = None,
+) -> bytes:
     """
     Create a PKCS#10 Certificate Signing Request.
     """
-    cri = CertificationRequestInfo({
-        'version': 'v1',
-        'subject': RDNSequence([
-            [{
-                'type': typ,
-                'value': value,
-            }]
-            for typ, value in subject
-        ]),
-        'subject_pk_info': get_spki(priv.public),
-        'attributes': attributes or [],
-    })
+    cri = CertificationRequestInfo(
+        {
+            "version": "v1",
+            "subject": RDNSequence([[{"type": typ, "value": value}] for typ, value in subject]),
+            "subject_pk_info": get_spki(priv.public),
+            "attributes": attributes or [],
+        }
+    )
 
     sig = await priv.sign(cri.dump())
 
-    return CertificationRequest({
-        'certification_request_info': cri,
-        'signature_algorithm': get_sig_alg(sig),
-        'signature': get_sig_bytes(sig),
-    }).dump()
+    return CertificationRequest(
+        {
+            "certification_request_info": cri,
+            "signature_algorithm": get_sig_alg(sig),
+            "signature": get_sig_bytes(sig),
+        }
+    ).dump()

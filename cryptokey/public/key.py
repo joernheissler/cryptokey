@@ -148,6 +148,7 @@ class SignatureMetadata:
     """
     Meta data for signatures. Extended by algorithm specific sub classes.
     """
+
     algorithm: AsymmetricAlgorithm
 
 
@@ -156,6 +157,7 @@ class Signature:
     """
     Result of a sign operation.
     """
+
     key: PublicKey = field(repr=False)
     meta: SignatureMetadata
 

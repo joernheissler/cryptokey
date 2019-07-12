@@ -21,22 +21,22 @@ def to_int_tuple(value: OidValue) -> Tuple[int, ...]:
     if isinstance(value, Asn1ObjId):
         value = value.dotted
     if isinstance(value, str):
-        value = value.split('.')
+        value = value.split(".")
 
     result = tuple(map(int, value))
 
     # X.660 6.2.1
     for i in result:
         if i < 0:
-            raise ValueError('OID arcs cannot be negative')
+            raise ValueError("OID arcs cannot be negative")
 
     # X.660 6.2.1 a)
     if len(result) > 0 and result[0] > 2:
-        raise ValueError('Root arc must be 0, 1 or 2')
+        raise ValueError("Root arc must be 0, 1 or 2")
 
     # X.660 6.2.1 b)
     if len(result) > 1 and result[0] < 2 and result[1] > 39:
-        raise ValueError('Second arc must be in [0, 39] for roots 0 and 1')
+        raise ValueError("Second arc must be in [0, 39] for roots 0 and 1")
 
     return result
 
@@ -72,7 +72,7 @@ class ObjectIdentifier:
         """
         Return the ObjectIdentifier in dotted form, e.g. "1.3.6.1.4.1".
         """
-        return '.'.join(str(v) for v in self.value)
+        return ".".join(str(v) for v in self.value)
 
     def __bytes__(self) -> bytes:
         """
@@ -85,7 +85,7 @@ class ObjectIdentifier:
         Check for prefixes. E.g. `OID-1-3-6-1-4-1 in OID-1-3-6` is True.
         """
         item = to_int_tuple(item)
-        return self.value == item[0:len(self.value)]
+        return self.value == item[0 : len(self.value)]
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, (tuple, list, str, bytes, Asn1ObjId, ObjectIdentifier)):
@@ -101,9 +101,9 @@ class ObjectIdentifier:
 
         if isinstance(key, slice):
             if key.start not in (0, None):
-                raise IndexError('Slices need to start at 0')
+                raise IndexError("Slices need to start at 0")
             if key.step is not None:
-                raise IndexError('No step supported')
+                raise IndexError("No step supported")
             return ObjectIdentifier(self.value[key])
 
         raise TypeError
@@ -130,7 +130,7 @@ class ObjectIdentifier:
         """
         Python expression that results in the same ObjectIdentifier.
         """
-        return '-'.join(chain(('OID',), map(str, self.value)))
+        return "-".join(chain(("OID",), map(str, self.value)))
 
     def __str__(self) -> str:
         """
@@ -149,6 +149,7 @@ class ObjectIdentifier:
 # Root object ID, to be used like OID-1-3-6-1-4-1
 OID = ObjectIdentifier(())
 
+# fmt: off
 # Type hint for the various OID formats/types supported by the above functions.
 OidValue = Union[
     Sequence[Union[int, str]],  # sequence of ints or strings, e.g. [10, 20, "30", "40", 50]
@@ -157,3 +158,4 @@ OidValue = Union[
     Asn1ObjId,                  # asn1crypto ObjectIdentifier, e.g. Asn1ObjId("10.20.30.40.50")
     ObjectIdentifier,           # ObjectIdentifier which uses a tuple internally
 ]
+# fmt: on

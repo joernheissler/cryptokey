@@ -42,10 +42,10 @@ def calculate_salt_len(mod_bits: int, opt: rsa.PssOptions, dgst_len: int) -> int
     em_bits = mod_bits - 1
 
     if dgst_len < 0:
-        raise ValueError('dgst_len cannot be negative')
+        raise ValueError("dgst_len cannot be negative")
 
     if em_bits < 0:
-        raise ValueError('em_bits cannot be negative')
+        raise ValueError("em_bits cannot be negative")
 
     # 9.1.1/Output)
     em_len = (em_bits + 7) // 8
@@ -64,7 +64,7 @@ def calculate_salt_len(mod_bits: int, opt: rsa.PssOptions, dgst_len: int) -> int
     max_salt_len = em_len - 1 - dgst_len - trailer_len
 
     if max_salt_len < 0:
-        raise ValueError('Maximum salt length cannot be negative')
+        raise ValueError("Maximum salt length cannot be negative")
 
     if opt.salt_length is None:
         salt_len = max_salt_len if opt.salt is None else len(opt.salt)
@@ -75,21 +75,21 @@ def calculate_salt_len(mod_bits: int, opt: rsa.PssOptions, dgst_len: int) -> int
         salt_len = min(dgst_len, max_salt_len)
     else:
         if opt.salt_length < 0:
-            raise ValueError('salt_length cannot be negative')
+            raise ValueError("salt_length cannot be negative")
 
         salt_len = opt.salt_length
 
     if salt_len > max_salt_len:
-        raise ValueError('Requested salt length too big')
+        raise ValueError("Requested salt length too big")
 
     return salt_len
 
 
 def parse_pss_options(
-        pub: rsa.RsaPublicKey,
-        default_hash_alg: hashes.HashAlgorithm,
-        options: Optional[rsa.PssOptions] = None,
-        dgst_hash_alg: Optional[hashes.HashAlgorithm] = None,
+    pub: rsa.RsaPublicKey,
+    default_hash_alg: hashes.HashAlgorithm,
+    options: Optional[rsa.PssOptions] = None,
+    dgst_hash_alg: Optional[hashes.HashAlgorithm] = None,
 ) -> rsa.RsaPssMetadata:
     """
     """
@@ -97,7 +97,7 @@ def parse_pss_options(
     opt = options or rsa.PssOptions()
 
     if dgst_hash_alg and opt.hash_alg and dgst_hash_alg != opt.hash_alg:
-        raise TypeError('conflicting hash algorithms')
+        raise TypeError("conflicting hash algorithms")
     hash_alg = dgst_hash_alg or opt.hash_alg or default_hash_alg
 
     opt_mgf = opt.mgf_alg or rsa.MgfAlgorithm(rsa.MgfAlgorithmId.MGF1)
@@ -105,15 +105,14 @@ def parse_pss_options(
     mgf_alg: rsa.MgfMetadata  # mypy doesn't see that below Mgf1Metadata and OtherMgfMetadata have same parent type.
 
     if opt_mgf.algorithm_id == rsa.MgfAlgorithmId.MGF1:
-        mgf_params = cast(rsa.Mgf1Parameters, opt_mgf.parameters) if opt_mgf.parameters else rsa.Mgf1Parameters()
-        mgf_alg = rsa.Mgf1Metadata(
-            rsa.MgfAlgorithmId.MGF1,
-            mgf_params.hash_alg or hash_alg,
+        mgf_params = (
+            cast(rsa.Mgf1Parameters, opt_mgf.parameters) if opt_mgf.parameters else rsa.Mgf1Parameters()
         )
+        mgf_alg = rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, mgf_params.hash_alg or hash_alg)
     elif opt_mgf.algorithm_id == rsa.MgfAlgorithmId.OTHER:
         mgf_alg = rsa.OtherMgfMetadata(rsa.MgfAlgorithmId.OTHER, opt_mgf.parameters)
     else:
-        raise NotImplementedError(f'MGF algorithm {opt_mgf.algorithm_id} not implemented')
+        raise NotImplementedError(f"MGF algorithm {opt_mgf.algorithm_id} not implemented")
 
     salt_length = calculate_salt_len(pub.modulus.bit_length(), opt, hashes.get_algo_size(hash_alg))
 
@@ -128,10 +127,10 @@ def parse_pss_options(
 
 
 def pad_pss(
-        pub: rsa.RsaPublicKey,
-        default_hash_alg: hashes.HashAlgorithm,
-        dgst: hashes.MessageDigest,
-        options: Optional[rsa.PssOptions] = None,
+    pub: rsa.RsaPublicKey,
+    default_hash_alg: hashes.HashAlgorithm,
+    dgst: hashes.MessageDigest,
+    options: Optional[rsa.PssOptions] = None,
 ) -> Tuple[bytes, rsa.RsaPssMetadata]:
     """
     """
@@ -148,7 +147,7 @@ def pad_pss(
     # Includes 9.1.1/3
     meta = parse_pss_options(pub, default_hash_alg, options, dgst.algorithm)
     if meta.mgf_alg.algorithm_id != rsa.MgfAlgorithmId.MGF1:
-        raise NotImplementedError(f'MGF {meta.mgf_alg.algorithm_id} not implemented')
+        raise NotImplementedError(f"MGF {meta.mgf_alg.algorithm_id} not implemented")
     mgf_alg = cast(rsa.Mgf1Metadata, meta.mgf_alg)
 
     # 9.1.1/4)

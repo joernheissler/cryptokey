@@ -14,11 +14,7 @@ from ..hashlib import HashlibHash
 class PartialRsaPublicKey(rsa.RsaPublicKey):
     def export_public_der(self) -> bytes:
         return keys.PublicKeyInfo.wrap(
-            keys.RSAPublicKey({
-                'modulus': self.modulus,
-                'public_exponent': self.public_exponent,
-            }),
-            'rsa',
+            keys.RSAPublicKey({"modulus": self.modulus, "public_exponent": self.public_exponent}), "rsa"
         ).dump()
 
     def export_public_pem(self) -> str:
@@ -48,7 +44,9 @@ class PartialRsaPrivateKey(rsa.RsaPrivateKey):
             raise NotImplementedError
         return await self.sign_int(rsa.os2ip(msg), meta)
 
-    async def sign_v15_raw(self, msg: bytes, meta: Optional[rsa.RsaSignatureMetadata] = None) -> rsa.RsaSignature:
+    async def sign_v15_raw(
+        self, msg: bytes, meta: Optional[rsa.RsaSignatureMetadata] = None
+    ) -> rsa.RsaSignature:
         return await self.sign_bytes(
             pad_pkcs1_v15(msg, self.public.modlen),
             meta or rsa.RsaSignatureMetadata(rsa.AsymmetricAlgorithm.RSA, rsa.RsaScheme.PKCS1v1_5_RAW),
@@ -64,8 +62,9 @@ class PartialRsaPrivateKey(rsa.RsaPrivateKey):
         dgst = HashlibHash.hash(hash_alg or self.default_hash_algorithm, msg)
         return await self.sign_v15_digest(dgst)
 
-    async def sign_pss_digest(self, dgst: hashes.MessageDigest,
-                              options: Optional[rsa.PssOptions] = None) -> rsa.RsaSignature:
+    async def sign_pss_digest(
+        self, dgst: hashes.MessageDigest, options: Optional[rsa.PssOptions] = None
+    ) -> rsa.RsaSignature:
         opt = options or self.default_pss_options
         padded, meta = pss.pad_pss(self.public, self.default_hash_algorithm, dgst, opt)
         return await self.sign_bytes(padded, meta)
@@ -84,7 +83,7 @@ class PartialRsaPrivateKey(rsa.RsaPrivateKey):
         if self.default_scheme == rsa.RsaScheme.PKCS1v1_5:
             return await self.sign_v15_digest(digest)
 
-        raise Exception(f'Bad default scheme: {self.default_scheme}')
+        raise Exception(f"Bad default scheme: {self.default_scheme}")
 
     async def sign(self, msg: bytes) -> rsa.RsaSignature:
         if self.default_scheme == rsa.RsaScheme.PSS:
@@ -93,4 +92,4 @@ class PartialRsaPrivateKey(rsa.RsaPrivateKey):
         if self.default_scheme == rsa.RsaScheme.PKCS1v1_5:
             return await self.sign_v15(msg)
 
-        raise Exception(f'Bad default scheme: {self.default_scheme}')
+        raise Exception(f"Bad default scheme: {self.default_scheme}")

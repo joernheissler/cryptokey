@@ -14,7 +14,7 @@ from .key import AsymmetricAlgorithm, PrivateKey, PublicKey, Signature, Signatur
 
 class UniqueKey(Enum):
     DEFAULT = auto()  # use library default
-    RANDOM = auto()   # generate random k
+    RANDOM = auto()  # generate random k
     RFC6979 = auto()  # generate k in accordance with rfc6979
 
 
@@ -26,6 +26,7 @@ class EcdsaSignatureMetadata(SignatureMetadata):
     """
     Meta data for ECDSA signatures.
     """
+
     hash_alg: HashAlgorithm
 
 
@@ -37,25 +38,28 @@ class EcdsaSignature(Signature):
     s: int
     der: bytes
 
-    def __init__(self, key: EccPublicKey, meta: EcdsaSignatureMetadata, r: Optional[int] = None,
-                 s: Optional[int] = None, der: Optional[ByteString] = None) -> None:
+    def __init__(
+        self,
+        key: EccPublicKey,
+        meta: EcdsaSignatureMetadata,
+        r: Optional[int] = None,
+        s: Optional[int] = None,
+        der: Optional[ByteString] = None,
+    ) -> None:
         self.key = key
         self.meta = meta
 
         if not r and not s and der:
             val = DSASignature.load(der)
-            self.r = val['r'].native
-            self.s = val['s'].native
+            self.r = val["r"].native
+            self.s = val["s"].native
             self.der = bytes(der)
         elif r and s and not der:
             self.r = r
             self.s = s
-            self.der = DSASignature({
-                'r': self.r,
-                's': self.s,
-            }).dump()
+            self.der = DSASignature({"r": self.r, "s": self.s}).dump()
         else:
-            raise ValueError('Bad parameters')
+            raise ValueError("Bad parameters")
 
 
 class EccPublicKey(PublicKey):
@@ -121,19 +125,14 @@ class EccPrivateKey(PrivateKey):
 
     @abstractmethod
     async def sign_digest_dsa(
-        self,
-        digest: MessageDigest,
-        k: UniqueKeyParam = UniqueKey.DEFAULT,
+        self, digest: MessageDigest, k: UniqueKeyParam = UniqueKey.DEFAULT
     ) -> EcdsaSignature:
         """
         """
 
     @abstractmethod
     async def sign_dsa(
-        self,
-        msg: bytes,
-        hash_alg: Optional[HashAlgorithm] = None,
-        k: UniqueKeyParam = UniqueKey.DEFAULT,
+        self, msg: bytes, hash_alg: Optional[HashAlgorithm] = None, k: UniqueKeyParam = UniqueKey.DEFAULT
     ) -> EcdsaSignature:
         """
         """

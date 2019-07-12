@@ -23,4 +23,5 @@ class PublicFormat:
     OpenSSH: str
 
 
-def load_pem_private_key(data: bytes, password: Optional[bytes], backend: Backend) -> PrivateKey: ...
+def load_pem_private_key(data: bytes, password: Optional[bytes], backend: Backend) -> PrivateKey:
+    ...

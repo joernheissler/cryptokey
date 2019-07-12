@@ -78,7 +78,7 @@ class TextbookEccPrivateKey(ecdsa.EccPrivateKey):
     def __post_init__(self) -> None:
         point = self.curve.gen * self.private_exponent
         if isinstance(point, NeutralPoint):
-            raise ValueError('Bad exponent')
+            raise ValueError("Bad exponent")
         self._public = TextbookEccPublicKey(point)
 
     @property
@@ -101,20 +101,18 @@ class TextbookEccPrivateKey(ecdsa.EccPrivateKey):
 
     @classmethod
     def from_asn1crypto(cls, key: asn1keys.PrivateKeyInfo) -> TextbookEccPrivateKey:
-        if key.algorithm != 'ec':
+        if key.algorithm != "ec":
             raise TypeError()
-        priv = key['private_key'].parsed
+        priv = key["private_key"].parsed
         return cls(
             # XXX support other curves
             curve=curve_map[ecc.CurveId.NIST_P_256],
-            exp=priv['private_key'].native,
+            exp=priv["private_key"].native,
         )
 
     @classmethod
     def load(
-        cls,
-        content: Union[str, bytes, asn1keys.PrivateKeyInfo],
-        password: Optional[Union[str, bytes]] = None,
+        cls, content: Union[str, bytes, asn1keys.PrivateKeyInfo], password: Optional[Union[str, bytes]] = None
     ) -> TextbookEccPrivateKey:
         """
         Load a private key from one of:
@@ -135,7 +133,7 @@ class TextbookEccPrivateKey(ecdsa.EccPrivateKey):
 
         assert isinstance(content, bytes)
 
-        if content.strip().startswith(b'-----BEGIN'):
+        if content.strip().startswith(b"-----BEGIN"):
             unarmor_result = unarmor(content)
             assert isinstance(unarmor_result, tuple)
             pem_type, headers, content = unarmor_result
@@ -172,9 +170,7 @@ class TextbookEccPrivateKey(ecdsa.EccPrivateKey):
         return await self.sign_digest_dsa(dgst, k)
 
     async def sign_digest_dsa(
-        self,
-        digest: MessageDigest,
-        k: ecdsa.UniqueKeyParam = ecdsa.UniqueKey.DEFAULT,
+        self, digest: MessageDigest, k: ecdsa.UniqueKeyParam = ecdsa.UniqueKey.DEFAULT
     ) -> ecdsa.EcdsaSignature:
         q = self.curve.q
 
@@ -186,16 +182,16 @@ class TextbookEccPrivateKey(ecdsa.EccPrivateKey):
 
         r = self.curve.gen * k
         if isinstance(r, NeutralPoint):
-            raise Exception('Hit neutral point. Use a better k!')
+            raise Exception("Hit neutral point. Use a better k!")
 
         rx = r.x % q
         if not rx:
-            raise Exception('Hit 0. Implement getting new k!!')
+            raise Exception("Hit 0. Implement getting new k!!")
 
         s = (bits2int(digest.value, q) + self.private_exponent * rx) * invert(k, q) % q
 
         if not s:
-            raise Exception('Hit 0. Implement getting new k!!')
+            raise Exception("Hit 0. Implement getting new k!!")
 
         return ecdsa.EcdsaSignature(
             key=self.public,
@@ -206,4 +202,4 @@ class TextbookEccPrivateKey(ecdsa.EccPrivateKey):
 
 
 def bits2int(value: bytes, q: int) -> int:
-    return (int.from_bytes(value, 'big') >> max(0, (len(value) * 8 - q.bit_length()))) % q
+    return (int.from_bytes(value, "big") >> max(0, (len(value) * 8 - q.bit_length()))) % q

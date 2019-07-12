@@ -10,6 +10,7 @@ from typing import Callable, Mapping, Optional, Tuple, Type, Union, cast
 
 from .oid import OID, ObjectIdentifier
 
+# fmt: off
 # https://csrc.nist.gov/projects/computer-security-objects-register/algorithm-registration#Hash
 OID_NIST_HASHES = OID-2-16-840-1-101-3-4-2
 
@@ -17,6 +18,7 @@ OID_NIST_HASHES = OID-2-16-840-1-101-3-4-2
 OID_KUDELSKI_HASH = OID-1-3-6-1-4-1-1722-12-2
 OID_BLAKE2B = OID_KUDELSKI_HASH-1
 OID_BLAKE2S = OID_KUDELSKI_HASH-2
+# fmt: on
 
 
 @dataclass
@@ -24,6 +26,7 @@ class Blake2Params:
     """
     Parameters for blake2 algorithm.
     """
+
     length: int
 
 
@@ -33,8 +36,12 @@ def blake2b_oid(alg: HashAlgorithm) -> ObjectIdentifier:
     """
     length = cast(Blake2Params, alg.parameters).length
     if length % 4:
-        raise ValueError('Blake2 only has OIDs for multiples of 32 bit')
-    return OID_BLAKE2B-(length // 4)
+        raise ValueError("Blake2 only has OIDs for multiples of 32 bit")
+    suffix = length // 4
+
+    # fmt: off
+    return OID_BLAKE2B-suffix
+    # fmt: on
 
 
 def blake2s_oid(alg: HashAlgorithm) -> ObjectIdentifier:
@@ -43,8 +50,12 @@ def blake2s_oid(alg: HashAlgorithm) -> ObjectIdentifier:
     """
     length = cast(Blake2Params, alg.parameters).length
     if length % 4:
-        raise ValueError('Blake2 only has OIDs for multiples of 32 bit')
-    return OID_BLAKE2S-(length // 4)
+        raise ValueError("Blake2 only has OIDs for multiples of 32 bit")
+    suffix = length // 4
+
+    # fmt: off
+    return OID_BLAKE2S-suffix
+    # fmt: on
 
 
 def blake2_size(alg: HashAlgorithm) -> int:
@@ -59,6 +70,7 @@ class ShakeLenParams:
     """
     Parameters for shake algorithm.
     """
+
     length: int
 
 
@@ -79,6 +91,7 @@ class HashAlgorithm:
     algorithm_id specifies which algorithm to use,
     parameters specifies any algorithm specific parameters, e.g. digest size.
     """
+
     algorithm_id: HashAlgorithmId
     parameters: Optional[HashParameters] = None
 
@@ -86,63 +99,61 @@ class HashAlgorithm:
 _algos: Mapping[
     str,
     Tuple[
-        Union[
-            None,
-            ObjectIdentifier,
-            Callable[[HashAlgorithm], ObjectIdentifier],
-        ],
-        Union[
-            int,
-            Callable[[HashAlgorithm], int],
-        ],
+        Union[None, ObjectIdentifier, Callable[[HashAlgorithm], ObjectIdentifier]],
+        Union[int, Callable[[HashAlgorithm], int]],
         Optional[Type[HashParameters]],
-    ]
+    ],
 ] = {
-    'BLAKE2B': (blake2b_oid, blake2_size, Blake2Params),
-    'BLAKE2S': (blake2s_oid, blake2_size, Blake2Params),
-    'MD5': (OID-1-2-840-113549-2-5, 16, None),
-    'RIPEMD_160': (OID-1-3-36-3-2-1, 20, None),
-    'SHA1': (OID-1-3-14-3-2-26, 20, None),
-    'SHA2_224': (OID_NIST_HASHES-4, 28, None),
-    'SHA2_256': (OID_NIST_HASHES-1, 32, None),
-    'SHA2_384': (OID_NIST_HASHES-2, 48, None),
-    'SHA2_512': (OID_NIST_HASHES-3, 64, None),
-    'SHA2_512_224': (OID_NIST_HASHES-5, 28, None),
-    'SHA2_512_256': (OID_NIST_HASHES-6, 32, None),
-    'SHA3_224': (OID_NIST_HASHES-7, 28, None),
-    'SHA3_256': (OID_NIST_HASHES-8, 32, None),
-    'SHA3_384': (OID_NIST_HASHES-9, 48, None),
-    'SHA3_512': (OID_NIST_HASHES-10, 64, None),
-    'SHAKE_128': (OID_NIST_HASHES-11, 16, None),
-    'SHAKE_128_LEN': (OID_NIST_HASHES-17, shake_len_size, ShakeLenParams),
-    'SHAKE_256': (OID_NIST_HASHES-12, 32, None),
-    'SHAKE_256_LEN': (OID_NIST_HASHES-18, shake_len_size, ShakeLenParams),
-    '_TEST_DUMMY': (None, 3, None),
+    # fmt: off
+    "BLAKE2B": (blake2b_oid, blake2_size, Blake2Params),
+    "BLAKE2S": (blake2s_oid, blake2_size, Blake2Params),
+    "MD5": (OID-1-2-840-113549-2-5, 16, None),
+    "RIPEMD_160": (OID-1-3-36-3-2-1, 20, None),
+    "SHA1": (OID-1-3-14-3-2-26, 20, None),
+    "SHA2_224": (OID_NIST_HASHES-4, 28, None),
+    "SHA2_256": (OID_NIST_HASHES-1, 32, None),
+    "SHA2_384": (OID_NIST_HASHES-2, 48, None),
+    "SHA2_512": (OID_NIST_HASHES-3, 64, None),
+    "SHA2_512_224": (OID_NIST_HASHES-5, 28, None),
+    "SHA2_512_256": (OID_NIST_HASHES-6, 32, None),
+    "SHA3_224": (OID_NIST_HASHES-7, 28, None),
+    "SHA3_256": (OID_NIST_HASHES-8, 32, None),
+    "SHA3_384": (OID_NIST_HASHES-9, 48, None),
+    "SHA3_512": (OID_NIST_HASHES-10, 64, None),
+    "SHAKE_128": (OID_NIST_HASHES-11, 16, None),
+    "SHAKE_128_LEN": (OID_NIST_HASHES-17, shake_len_size, ShakeLenParams),
+    "SHAKE_256": (OID_NIST_HASHES-12, 32, None),
+    "SHAKE_256_LEN": (OID_NIST_HASHES-18, shake_len_size, ShakeLenParams),
+    "_TEST_DUMMY": (None, 3, None),
+    # fmt: on
 }
 
 # MyPy doesn't work with list(_algos.keys())
-HashAlgorithmId = Enum('HashAlgorithmId', [
-    'BLAKE2B',
-    'BLAKE2S',
-    'MD5',
-    'RIPEMD_160',
-    'SHA1',
-    'SHA2_224',
-    'SHA2_256',
-    'SHA2_384',
-    'SHA2_512',
-    'SHA2_512_224',
-    'SHA2_512_256',
-    'SHA3_224',
-    'SHA3_256',
-    'SHA3_384',
-    'SHA3_512',
-    'SHAKE_128',
-    'SHAKE_128_LEN',
-    'SHAKE_256',
-    'SHAKE_256_LEN',
-    '_TEST_DUMMY',
-])
+HashAlgorithmId = Enum(
+    "HashAlgorithmId",
+    [
+        "BLAKE2B",
+        "BLAKE2S",
+        "MD5",
+        "RIPEMD_160",
+        "SHA1",
+        "SHA2_224",
+        "SHA2_256",
+        "SHA2_384",
+        "SHA2_512",
+        "SHA2_512_224",
+        "SHA2_512_256",
+        "SHA3_224",
+        "SHA3_256",
+        "SHA3_384",
+        "SHA3_512",
+        "SHAKE_128",
+        "SHAKE_128_LEN",
+        "SHAKE_256",
+        "SHAKE_256_LEN",
+        "_TEST_DUMMY",
+    ],
+)
 
 _hash_oids = {getattr(HashAlgorithmId, k): algo[0] for k, algo in _algos.items()}
 _hash_sizes = {getattr(HashAlgorithmId, k): algo[1] for k, algo in _algos.items()}
@@ -157,7 +168,7 @@ def get_algo_oid(alg: HashAlgorithm) -> ObjectIdentifier:
     """
     oid = _hash_oids[alg.algorithm_id]
     if oid is None:
-        raise ValueError('No OID defined')
+        raise ValueError("No OID defined")
 
     if isinstance(oid, ObjectIdentifier):
         return oid
@@ -185,6 +196,7 @@ class MessageDigest:
     `algorithm` is the hash algorithm + parameters used to create this digest.
     `hashfunc` is a class which can be instantiated to create more digests with the same set of parameters.
     """
+
     value: bytes
     hashobj: InitVar[HashFunction]
     algorithm: HashAlgorithm = field(init=False)

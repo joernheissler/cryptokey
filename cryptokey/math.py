@@ -36,5 +36,5 @@ def invert(a: int, n: int) -> int:
     """
     g, x, __ = gcdext(a, n)
     if g != 1:
-        raise ValueError('Arguments are not coprime')
+        raise ValueError("Arguments are not coprime")
     return x % n

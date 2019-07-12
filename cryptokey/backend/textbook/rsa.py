@@ -75,27 +75,22 @@ class TextbookRsaPrivateKey(PartialRsaPrivateKey):
         if not isinstance(key, RsaPrivateKey):
             raise TypeError()
 
-        return cls(
-            public_exponent=key.public.public_exponent,
-            prime_factors=key.primes,
-        )
+        return cls(public_exponent=key.public.public_exponent, prime_factors=key.primes)
 
     @classmethod
     def from_asn1crypto(cls, key: asn1keys.PrivateKeyInfo) -> TextbookRsaPrivateKey:
-        if key.algorithm != 'rsa':
+        if key.algorithm != "rsa":
             raise ValueError()
-        priv = key['private_key'].parsed
+        priv = key["private_key"].parsed
         # XXX load all other parts, implement CRT.
         return cls(
-            public_exponent=priv['public_exponent'].native,
-            prime_factors=(priv['prime1'].native, priv['prime2'].native),
+            public_exponent=priv["public_exponent"].native,
+            prime_factors=(priv["prime1"].native, priv["prime2"].native),
         )
 
     @classmethod
     def load(
-        cls,
-        content: Union[str, bytes, asn1keys.PrivateKeyInfo],
-        password: Optional[Union[str, bytes]] = None,
+        cls, content: Union[str, bytes, asn1keys.PrivateKeyInfo], password: Optional[Union[str, bytes]] = None
     ) -> TextbookRsaPrivateKey:
         """
         Load a private key from one of:
@@ -116,7 +111,7 @@ class TextbookRsaPrivateKey(PartialRsaPrivateKey):
 
         assert isinstance(content, bytes)
 
-        if content.strip().startswith(b'-----BEGIN'):
+        if content.strip().startswith(b"-----BEGIN"):
             unarmor_result = unarmor(content)
             assert isinstance(unarmor_result, tuple)
             pem_type, headers, content = unarmor_result
@@ -131,7 +126,7 @@ class TextbookRsaPrivateKey(PartialRsaPrivateKey):
 
     def __post_init__(self, public_exponent: int, prime_factors: Sequence[int]) -> None:
         if len(prime_factors) < 2:
-            raise ValueError('Need at least 2 primes!')
+            raise ValueError("Need at least 2 primes!")
         self._primes = tuple(prime_factors)
         self._modulus = reduce(mul, prime_factors, 1)
 

@@ -12,31 +12,31 @@ from cryptokey.public.key import AsymmetricAlgorithm
 
 # FIPS_186-3 test vector
 msg = bytes.fromhex(
-    '5905238877c77421f73e43ee3da6f2d9e2ccad5fc942dcec0cbd25482935faaf'
-    '416983fe165b1a045ee2bcd2e6dca3bdf46c4310a7461f9a37960ca672d3feb5'
-    '473e253605fb1ddfd28065b53cb5858a8ad28175bf9bd386a5e471ea7a65c17c'
-    'c934a9d791e91491eb3754d03799790fe2d308d16146d5c9b0d0debd97d79ce8'
+    "5905238877c77421f73e43ee3da6f2d9e2ccad5fc942dcec0cbd25482935faaf"
+    "416983fe165b1a045ee2bcd2e6dca3bdf46c4310a7461f9a37960ca672d3feb5"
+    "473e253605fb1ddfd28065b53cb5858a8ad28175bf9bd386a5e471ea7a65c17c"
+    "c934a9d791e91491eb3754d03799790fe2d308d16146d5c9b0d0debd97d79ce8"
 )
-key_d = 0x519b423d715f8b581f4fa8ee59f4771a5b44c8130b4e3eacca54a56dda72b464
-sig_k = 0x94a1bbb14b906a61a280f245f9e93c7f3b4a6247824f5d33b9670787642a68de
-sig_r = 0xf3ac8061b514795b8843e3d6629527ed2afd6b1f6a555a7acabb5e6f79c8c2ac
-sig_s = 0x8bf77819ca05a6b2786c76262bf7371cef97b218e96f175a3ccdda2acc058903
+key_d = 0x519B423D715F8B581F4FA8EE59F4771A5B44C8130B4E3EACCA54A56DDA72B464
+sig_k = 0x94A1BBB14B906A61A280F245F9E93C7F3B4A6247824F5D33B9670787642A68DE
+sig_r = 0xF3AC8061B514795B8843E3D6629527ED2AFD6B1F6A555A7ACABB5E6F79C8C2AC
+sig_s = 0x8BF77819CA05A6B2786C76262BF7371CEF97B218E96F175A3CCDDA2ACC058903
 key = ecdsa.TextbookEccPrivateKey(ecc.NIST_P_256, key_d)
 pub = key.public
 
-key_pem = '''
+key_pem = """
 -----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgUZtCPXFfi1gfT6ju
 WfR3GltEyBMLTj6sylSlbdpytGShRANCAAQcy+kcB1/H9PAzv6JI24/M01Zd6Uu/
 sS88Wf9GwnG/g85AFMaIEfmiGh/bLA5hE+Btt8qTt0BOeNx8zVyomkyp
 -----END PRIVATE KEY-----
-'''
+"""
 
 
 def test_public_from_key() -> None:
     assert ecdsa.TextbookEccPublicKey.from_key(pub) == pub
     with pytest.raises(TypeError):
-        ecdsa.TextbookEccPublicKey.from_key(b'foo')  # type: ignore
+        ecdsa.TextbookEccPublicKey.from_key(b"foo")  # type: ignore
 
 
 def test_public_export() -> None:
@@ -49,7 +49,7 @@ def test_public_export() -> None:
 
 
 def test_private_init() -> None:
-    with pytest.raises(ValueError, match='exponent'):
+    with pytest.raises(ValueError, match="exponent"):
         ecdsa.TextbookEccPrivateKey(ecc.NIST_P_256, ecc.NIST_P_256.q)
 
 
@@ -63,21 +63,23 @@ def test_private_curve_id() -> None:
 
 def test_private_from_key() -> None:
     with pytest.raises(TypeError):
-        ecdsa.TextbookEccPrivateKey.from_key(b'foo')  # type: ignore
+        ecdsa.TextbookEccPrivateKey.from_key(b"foo")  # type: ignore
 
     assert ecdsa.TextbookEccPrivateKey.from_key(key) == key
 
 
 def test_private_load() -> None:
     with pytest.raises(TypeError):
-        ecdsa.TextbookEccPrivateKey.load(b64decode(
-            'MEECAQAwDQYJKoZIhvcNAQEBBQAELTArAgEAAgUAmUvqJQIDAQABAgRIRJAtAgMAyFcCAwDD4wICAkcCAlmJAgIuOA=='
-        ))
+        ecdsa.TextbookEccPrivateKey.load(
+            b64decode(
+                "MEECAQAwDQYJKoZIhvcNAQEBBQAELTArAgEAAgUAmUvqJQIDAQABAgRIRJAtAgMAyFcCAwDD4wICAkcCAlmJAgIuOA=="
+            )
+        )
 
     with pytest.raises(TypeError):
-        ecdsa.TextbookEccPrivateKey.load('Hello')
+        ecdsa.TextbookEccPrivateKey.load("Hello")
 
-    key_der = b64decode(''.join(key_pem.strip().splitlines()[1:-1]))
+    key_der = b64decode("".join(key_pem.strip().splitlines()[1:-1]))
     pki = PrivateKeyInfo.load(key_der)
     k0 = ecdsa.TextbookEccPrivateKey.load(pki)
     k1 = ecdsa.TextbookEccPrivateKey.load(key_pem)
@@ -125,5 +127,5 @@ def test_sign_dsa() -> None:
     with pytest.raises(NotImplementedError):
         run(key.sign_dsa(msg, hashes.sha2_256(), UniqueKey.RFC6979))
 
-    with pytest.raises(Exception, match='neutral point'):
+    with pytest.raises(Exception, match="neutral point"):
         run(key.sign_dsa(msg, hashes.sha2_256(), ecc.NIST_P_256.q))

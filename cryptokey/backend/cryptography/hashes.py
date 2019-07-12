@@ -25,7 +25,7 @@ def create_hash(hash_alg: hashes.HashAlgorithm) -> cr_hashes.HashAlgorithm:
     try:
         func = _hash_factories[hash_alg.algorithm_id]
     except KeyError as ex:
-        raise NotImplementedError(f'Hash {hash_alg.algorithm_id} not supported') from ex
+        raise NotImplementedError(f"Hash {hash_alg.algorithm_id} not supported") from ex
 
     return func(hash_alg.parameters)
 
