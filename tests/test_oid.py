@@ -66,6 +66,7 @@ def test_object_identifier() -> None:
     d = {oid: "hello"}
     assert OID-1-3-6 not in d
     assert d[OID-1-20-300-4000-50000] == "hello"
+# fmt: on
 
     with pytest.raises(IndexError):
         oid[42]
@@ -78,4 +79,5 @@ def test_object_identifier() -> None:
 
     with pytest.raises(TypeError):
         oid["Hello World!"]  # type: ignore
-# fmt: on
+
+    assert (ObjectIdentifier("1") == 1) is False
