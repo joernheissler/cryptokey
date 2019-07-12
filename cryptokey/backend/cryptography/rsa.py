@@ -170,9 +170,9 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
     def _sign_v15(self, data: bytes, hash_alg: HashAlgorithm, is_pre: bool) -> rsa.RsaSignature:
         h_alg = create_hash(hash_alg)
 
-        return rsa.RsaSignature(
+        return rsa.RsaSignature.from_bytes(
             key=self.public,
-            bytes_value=self._privkey.sign(
+            value=self._privkey.sign(
                 data, cr_padding.PKCS1v15(), cr_utils.Prehashed(h_alg) if is_pre else h_alg
             ),
             meta=rsa.RsaV15Metadata(AsymmetricAlgorithm.RSA, rsa.RsaScheme.PKCS1v1_5, hash_alg),
@@ -202,4 +202,4 @@ class RsaPrivateKey(rsa.RsaPrivateKey):
             cr_utils.Prehashed(h_alg) if pre_hash_alg else h_alg,
         )
 
-        return rsa.RsaSignature(key=self.public, bytes_value=sig, meta=meta)
+        return rsa.RsaSignature.from_bytes(key=self.public, value=sig, meta=meta)

@@ -163,10 +163,10 @@ class TextbookRsaPrivateKey(PartialRsaPrivateKey):
         Sign an integer value.
         """
 
-        return RsaSignature(
+        return RsaSignature.from_int(
             key=self._public,
             meta=meta or RsaSignatureMetadata(AsymmetricAlgorithm.RSA, RsaScheme.RAW),
-            int_value=pow(msg, self._private_exponent, self._modulus),
+            value=pow(msg, self._private_exponent, self._modulus),
         )
 
     # async def decrypt(self, ciphertext: bytes) -> bytes:

@@ -92,32 +92,26 @@ def test_pubkey() -> None:
 def test_signature() -> None:
     meta = rsa.RsaSignatureMetadata(algorithm=AsymmetricAlgorithm.RSA, scheme=rsa.RsaScheme.RAW)
 
-    with pytest.raises(TypeError, match="value xor int_value"):
-        rsa.RsaSignature(key=PubKey(2048), meta=meta, bytes_value=b"foo", int_value=12345)
-
-    sig = rsa.RsaSignature(key=PubKey(2048), meta=meta, bytes_value=b"foo")
+    sig = rsa.RsaSignature.from_bytes(key=PubKey(2048), meta=meta, value=b"foo")
     assert sig.int_value == 0x666F6F
     assert sig.bytes_value == bytes(253) + b"foo"
 
-    sig = rsa.RsaSignature(key=PubKey(2048), meta=meta, bytes_value=bytes(253) + b"foo")
+    sig = rsa.RsaSignature.from_bytes(key=PubKey(2048), meta=meta, value=bytes(253) + b"foo")
     assert sig.int_value == 0x666F6F
     assert sig.bytes_value == bytes(253) + b"foo"
 
-    sig = rsa.RsaSignature(key=PubKey(2048), meta=meta, bytes_value=bytes(512) + b"foo")
+    sig = rsa.RsaSignature.from_bytes(key=PubKey(2048), meta=meta, value=bytes(512) + b"foo")
     assert sig.int_value == 0x666F6F
     assert sig.bytes_value == bytes(253) + b"foo"
-
-    with pytest.raises(TypeError, match="value xor int_value"):
-        rsa.RsaSignature(key=PubKey(2048), meta=meta)
 
     with pytest.raises(ValueError, match="Signature is negative"):
-        rsa.RsaSignature(key=PubKey(2048), meta=meta, int_value=-20)
+        rsa.RsaSignature.from_int(key=PubKey(2048), meta=meta, value=-20)
 
-    sig = rsa.RsaSignature(key=PubKey(2048), meta=meta, int_value=0x666F6F)
+    sig = rsa.RsaSignature.from_int(key=PubKey(2048), meta=meta, value=0x666F6F)
     assert sig.int_value == 0x666F6F
     assert sig.bytes_value == bytes(253) + b"foo"
 
     with pytest.raises(ValueError, match="not smaller"):
         key = PubKey(2048)
         key._modulus -= 1000
-        rsa.RsaSignature(key=key, meta=meta, int_value=((1 << 2048) - 10))
+        rsa.RsaSignature.from_int(key=key, meta=meta, value=((1 << 2048) - 10))

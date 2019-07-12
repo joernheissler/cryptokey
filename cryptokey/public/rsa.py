@@ -299,32 +299,22 @@ class RsaSignature(Signature):
     int_value: int
     bytes_value: bytes
 
-    def __init__(
-        self,
-        key: RsaPublicKey,
-        meta: RsaSignatureMetadata,
-        int_value: Optional[int] = None,
-        bytes_value: Optional[ByteString] = None,
-    ) -> None:
-        self.key = key
-        self.meta = meta
-
-        if bytes_value is not None:
-            if int_value is not None:
-                raise TypeError("Need bytes_value xor int_value")
-            self.bytes_value = bytes(bytes_value)
-            self.int_value = os2ip(bytes_value)
-
-            # Some implementations might strip or add leading zeros.
-            if len(bytes_value) != self.key.modlen:
-                self.bytes_value = i2osp(self.int_value, self.key.modlen)
-        elif int_value is None:
-            raise TypeError("Need bytes_value xor int_value")
-        elif int_value < 0:
+    @classmethod
+    def from_int(cls, key: RsaPublicKey, meta: RsaSignatureMetadata, value: int) -> RsaSignature:
+        if value < 0:
             raise ValueError("Signature is negative")
-        else:
-            self.int_value = int_value
-            self.bytes_value = i2osp(int_value, self.key.modlen)
+        return cls(key, meta, value, i2osp(value, key.modlen))
 
+    @classmethod
+    def from_bytes(cls, key: RsaPublicKey, meta: RsaSignatureMetadata, value: ByteString) -> RsaSignature:
+        int_value = os2ip(value)
+        # Some implementations might strip or add leading zeros.
+        if len(value) != key.modlen:
+            value = i2osp(int_value, key.modlen)
+        else:
+            value = bytes(value)
+        return cls(key, meta, int_value, value)
+
+    def __post_init__(self) -> None:
         if self.int_value >= self.key.modulus:
             raise ValueError("Signature is not smaller than modulus")
