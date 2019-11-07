@@ -13,7 +13,7 @@ from __future__ import annotations
 from dataclasses import InitVar, dataclass, field
 from functools import reduce
 from operator import mul
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Set, Tuple, Union
 
 from asn1crypto import keys as asn1keys
 from asn1crypto.pem import unarmor
@@ -59,6 +59,21 @@ class TextbookRsaPublicKey(PartialRsaPublicKey):
     # def verify_digest(self, signature: Signature, digest: MessageDigest) -> None:
     #     if not isinstance(signature, RsaSignature):
     #         raise TypeError()
+
+    # XXX rework function signature
+    async def encrypt_int(self, msg: int) -> int:
+        return pow(msg, self.exp, self.mod)
+
+    async def encrypt_ascii_string(self, message: str) -> str:
+        """
+        Stupid encryption scheme often used for crypto riddles.
+        Each char is encrypted individually using textbook RSA. The resulting
+        integers are represented as decimal numbers and concatenated.
+        """
+        return "".join([str(await self.encrypt_int(ord(c))) for c in message])
+
+
+# encrypt individual chars using textbook rsa and small moduli, concatenate the result (e.g. in decimal) to a string.
 
 
 @dataclass
@@ -171,3 +186,60 @@ class TextbookRsaPrivateKey(PartialRsaPrivateKey):
 
     # async def decrypt(self, ciphertext: bytes) -> bytes:
     #     raise NotImplementedError
+
+    # XXX rework function signature
+    async def decrypt_int(self, ciphertext: int) -> int:
+        return pow(ciphertext, self._private_exponent, self._modulus)
+
+    async def _decrypt_ascii_next(self, ciphertext: str, valid_chars: Set[int]) -> Set[Tuple[int, str]]:
+        results = set()
+        value = 0
+        if ciphertext[0] == '0':
+            # Leading zeros are not valid encodings in this scheme.
+            # Exception is "0" itself, if it's valid.
+            if 0 in valid_chars:
+                results.add(chr(0))
+            return results
+
+        for length, digit in enumerate(ciphertext, start=1):
+            value = value * 10 + int(digit)
+            if value >= self._modulus:
+                break
+            decrypted = await self.decrypt_int(value)
+            if decrypted in valid_chars:
+                results.add((length, chr(decrypted)))
+        return results
+
+    async def decrypt_ascii_string(self, ciphertext: str, pos=0) -> Set[str]:
+        """
+        Stupid encryption scheme often used for crypto riddles.
+        Each char is encrypted individually using textbook RSA. The resulting
+        integers are represented as decimal numbers and concatenated.
+
+        Multiple decryptions are possible, so return a set.
+        If decryption fails, raise ValueError
+        """
+        valid_chars = {9, 10, 13, *range(32, 127)}
+
+        result = ""
+        while pos < len(ciphertext):
+            cur = await self._decrypt_ascii_next(ciphertext[pos:], valid_chars)
+            if not cur:
+                raise ValueError(f"Cannot decrypt ciphertext at pos {pos}")
+            if len(cur) == 1:
+                ((cur_pos, cur_char),) = cur
+                pos += cur_pos
+                result += cur_char
+            else:
+                results = set()
+                for cur_pos, cur_char in cur:
+                    try:
+                        for suffix in await self.decrypt_ascii_string(ciphertext, pos + cur_pos):
+                            results.add(result + cur_char + suffix)
+                    except ValueError:
+                        pass
+                if not results:
+                    raise ValueError(f"Cannot decrypt ciphertext at pos {pos}")
+                return results
+
+        return {result}
