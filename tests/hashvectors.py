@@ -186,12 +186,12 @@ hash_vectors: List[HashVector] = [
 
 def check_vector(vector: HashVector, backend: ModuleType, impl: Type[hashes.HashFunction]) -> None:
     if vector.algo.algorithm_id != 0:
-        assert hashes.get_algo_size(vector.algo) == len(vector.digests[0]) // 2
+        assert vector.algo.size == len(vector.digests[0]) // 2
         if vector.oid is None:
             with pytest.raises(ValueError):
-                hashes.get_algo_oid(vector.algo)
+                vector.algo.oid
         else:
-            assert hashes.get_algo_oid(vector.algo) == vector.oid
+            assert vector.algo.oid == vector.oid
 
     for inp, out in zip(hash_inputs, vector.digests):
         out_bytes = bytes.fromhex(out)

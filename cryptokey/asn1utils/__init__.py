@@ -130,10 +130,10 @@ def get_sig_alg_rsa_pss(meta: rsa.RsaPssMetadata) -> Dict[str, Any]:
     return {
         "algorithm": "rsassa_pss",
         "parameters": {
-            "hash_algorithm": {"algorithm": str(hashes.get_algo_oid(meta.hash_alg)), "parameters": {}},
+            "hash_algorithm": {"algorithm": str(meta.hash_alg.oid), "parameters": {}},
             "mask_gen_algorithm": {
                 "algorithm": "mgf1",
-                "parameters": {"algorithm": str(hashes.get_algo_oid(mgf1_params.hash_alg)), "parameters": {}},
+                "parameters": {"algorithm": str(mgf1_params.hash_alg.oid), "parameters": {}},
             },
             "salt_length": meta.salt_length,
             "trailer_field": "trailer_field_bc",

@@ -114,7 +114,7 @@ def parse_pss_options(
     else:
         raise NotImplementedError(f"MGF algorithm {opt_mgf.algorithm_id} not implemented")
 
-    salt_length = calculate_salt_len(pub.modulus.bit_length(), opt, hashes.get_algo_size(hash_alg))
+    salt_length = calculate_salt_len(pub.modulus.bit_length(), opt, hash_alg.size)
 
     return rsa.RsaPssMetadata(
         algorithm=key.AsymmetricAlgorithm.RSA,

@@ -95,6 +95,32 @@ class HashAlgorithm:
     algorithm_id: HashAlgorithmId
     parameters: Optional[HashParameters] = None
 
+    @property
+    def size(self) -> int:
+        """
+        Get digest size of algorithm.
+        """
+        size = _hash_sizes[self.algorithm_id]
+        if isinstance(size, int):
+            return size
+
+        return size(self)
+
+    @property
+    def oid(self) -> ObjectIdentifier:
+        """
+        Object identifier for this hash function.
+        It might vary with different parameters.
+        """
+        oid = _hash_oids[self.algorithm_id]
+        if oid is None:
+            raise ValueError("No OID defined")
+
+        if isinstance(oid, ObjectIdentifier):
+            return oid
+
+        return oid(self)
+
 
 _algos: Mapping[
     str,
@@ -157,34 +183,6 @@ HashAlgorithmId = Enum(
 
 _hash_oids = {getattr(HashAlgorithmId, k): algo[0] for k, algo in _algos.items()}
 _hash_sizes = {getattr(HashAlgorithmId, k): algo[1] for k, algo in _algos.items()}
-for k, algo in _algos.items():
-    pass
-
-
-def get_algo_oid(alg: HashAlgorithm) -> ObjectIdentifier:
-    """
-    Object identifier for this hash function.
-    It might vary with different parameters.
-    """
-    oid = _hash_oids[alg.algorithm_id]
-    if oid is None:
-        raise ValueError("No OID defined")
-
-    if isinstance(oid, ObjectIdentifier):
-        return oid
-
-    return oid(alg)
-
-
-def get_algo_size(alg: HashAlgorithm) -> int:
-    """
-    Get digest size by algorithm.
-    """
-    size = _hash_sizes[alg.algorithm_id]
-    if isinstance(size, int):
-        return size
-
-    return size(alg)
 
 
 @dataclass
@@ -218,7 +216,7 @@ class MessageDigest:
         Object identifier for this hash function.
         It might vary with different parameters.
         """
-        return get_algo_oid(self.algorithm)
+        return self.algorithm.oid
 
     @property
     def size(self) -> int:
@@ -294,14 +292,14 @@ class HashFunction(metaclass=ABCMeta):
         Object identifier for this hash function.
         It might vary with different parameters.
         """
-        return get_algo_oid(self.algorithm)
+        return self.algorithm.oid
 
     @property
     def size(self) -> int:
         """
         Size of the digest in bytes.
         """
-        return get_algo_size(self.algorithm)
+        return self.algorithm.size
 
     @abstractmethod
     def copy(self) -> HashFunction:
