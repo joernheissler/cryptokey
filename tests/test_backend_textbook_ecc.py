@@ -1,21 +1,22 @@
 import pytest
-from cryptokey.backend.textbook.ecc import NIST_P_256, NIST_P_384, CurvePoint
+from cryptokey.backend.textbook.ecc import NIST_P_256, NIST_P_384, CurvePoint, Point
 from cryptokey.backend.textbook.ecc import neutral_point as poi
 from cryptokey.public.ecc import CurveId
+from typing import cast
 
 point = NIST_P_256.gen * 12345
 
 
 def test_neutral_add() -> None:
     with pytest.raises(TypeError):
-        poi + 123
+        poi + cast(Point, 123)
     assert poi == poi + poi
 
 
 def test_neutral_iadd() -> None:
-    tmp = poi
+    tmp: Point = poi
     with pytest.raises(TypeError):
-        tmp += 123
+        tmp += cast(Point, 123)
 
     tmp += point
 
@@ -25,12 +26,12 @@ def test_neutral_iadd() -> None:
 
 def test_neutral_radd() -> None:
     with pytest.raises(TypeError):
-        123 + poi
+        cast(Point, 123) + poi
 
 
 def test_neutral_mul() -> None:
     with pytest.raises(TypeError):
-        poi * 3.14
+        poi * cast(int, 3.14)
 
     assert poi * 42 == poi
 
@@ -38,7 +39,7 @@ def test_neutral_mul() -> None:
 def test_neutral_imul() -> None:
     tmp = poi
     with pytest.raises(TypeError):
-        tmp *= 3.14
+        tmp *= cast(int, 3.14)
 
     tmp *= 42
     assert tmp == poi
@@ -46,7 +47,7 @@ def test_neutral_imul() -> None:
 
 def test_neutral_rmul() -> None:
     with pytest.raises(TypeError):
-        3.14 * poi
+        cast(int, 3.14) * poi
 
     assert 42 * poi == poi
 
@@ -80,14 +81,14 @@ def test_point_add() -> None:
 
 def test_point_mul() -> None:
     with pytest.raises(TypeError):
-        point * 3.14
+        point * cast(int, 3.14)
 
     assert point * NIST_P_256.q == poi
 
 
 def test_point_rmul() -> None:
     with pytest.raises(TypeError):
-        3.14 * point
+        cast(int, 3.14) * point
 
     assert NIST_P_256.q * point == poi
     assert point * 42 == 42 * point
