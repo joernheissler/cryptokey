@@ -84,9 +84,13 @@ class PubKey(rsa.RsaPublicKey):
 
 def test_pubkey() -> None:
     for i in range(20):
-        assert PubKey(i * 8).modlen == i
+        pub = PubKey(i * 8)
+        assert pub.modlen == i
+        assert pub.mod_bits == i * 8
         for j in range(1, 8):
-            assert PubKey(i * 8 + j).modlen == i + 1
+            pub = PubKey(i * 8 + j)
+            assert pub.modlen == i + 1
+            assert pub.mod_bits == i * 8 + j
 
 
 def test_signature() -> None:

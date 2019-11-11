@@ -114,6 +114,13 @@ class RsaPublicKey(PublicKey):
         """
         return (self.modulus.bit_length() + 7) // 8
 
+    @property
+    def mod_bits(self) -> int:
+        """
+        Length of the modulus in bits.
+        """
+        return self.modulus.bit_length()
+
     # def encrypt(self, message: bytes) -> bytes:
     #     # XXX Add v15 and OAEP methods; use OAEP if available.
     #     pass
