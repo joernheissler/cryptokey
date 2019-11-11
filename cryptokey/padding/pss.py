@@ -5,7 +5,7 @@ according to rfc8017
 from __future__ import annotations
 
 from os import urandom
-from typing import Optional, Tuple, cast
+from typing import ByteString, Optional, Tuple, cast
 
 from .. import hashes
 from ..backend.hashlib import HashlibHash
@@ -23,10 +23,6 @@ def mgf1(seed: hashes.MessageDigest, mask_len: int, hash_alg: Optional[hashes.Ha
         count += 1
     del buf[mask_len:]
     return buf
-
-
-# # XXX functions to decode (e.g. extract salt) and verify PSS. It should also be possible
-# # to determine the salt without knowing the size before.
 
 
 def calculate_salt_len(mod_bits: int, opt: rsa.PssOptions, dgst_len: int) -> int:
@@ -187,3 +183,108 @@ def pad_pss(
 
     # 9.1.1/13)
     return enc_msg, meta
+
+
+def unpad_pss(
+    enc_msg: ByteString,
+    mod_bits: int,
+    hash_alg: hashes.HashAlgorithm,
+    mgf_alg: Optional[rsa.MgfMetadata] = None,
+    trailer_length=1,
+) -> Tuple[bytes, hashes.MessageDigest, bytes]:
+    """
+    Function to recover the salt, H and trailer field from a pss encoding
+    """
+
+    if not mgf_alg:
+        mgf_alg = rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, hash_alg)
+    elif not isinstance(mgf_alg, rsa.Mgf1Metadata):
+        raise NotImplementedError(f"MGF {mgf_alg.algorithm_id} not implemented")
+
+    # 9.1.2/Input)
+    em_bits = mod_bits - 1
+    em_len = (em_bits + 7) // 8
+
+    # Verify padding. Usually there should be 0 or 1 leading pad byte
+    # because PSS output is a bit shorter than the RSA modulus.
+    pad_len = len(enc_msg) - em_len
+    if pad_len < 0:
+        raise ValueError(f"Bad parameters, len(enc_msg)={len(enc_msg)}, mod_bits={mod_bits}")
+    if enc_msg[:pad_len] != bytes(pad_len):
+        raise ValueError(f"Nonzero leading bytes, enc_msg[:{pad_len}] = {enc_msg[:pad_len].hex()}")
+
+    # 9.1.2/3) don't include sLen here because we don't know it.
+    if em_len < 1 + hash_alg.size + trailer_length:
+        raise ValueError("Message too short")
+
+    # 9.1.2/4) value must be checked elsewhere because we don't know it.
+    trailer = bytes(enc_msg[-trailer_length:])
+
+    # 9.1.2/5)
+    db_len = em_len - hash_alg.size - trailer_length
+    db_bits = db_len * 8 - -em_bits % 8
+    masked_db = rsa.os2ip(enc_msg[pad_len : pad_len + db_len])
+    h = HashlibHash.load_digest(hash_alg, enc_msg[pad_len + db_len : -trailer_length])
+
+    # 9.1.2/6)
+    if masked_db >> db_bits:
+        raise ValueError("Nonzero padding bits")
+
+    # 9.1.2/7
+    db_mask = rsa.os2ip(mgf1(h, db_len, mgf_alg.hash_alg))
+
+    # 9.1.2/8
+    data_block = masked_db ^ db_mask
+
+    # 9.1.2/9
+    data_block &= ~(-1 << db_bits)
+
+    # 9.1.2/10)
+    # Padded value looks like: 00 00 00 01 xx xx xx xx, so the bit length must be 1 (mod 8).
+    idx_one = data_block.bit_length()
+    if idx_one % 8 != 1:
+        raise ValueError("Bad padding")
+
+    # 9.1.2/11)
+    salt = rsa.i2osp(data_block - (1 << (idx_one - 1)), idx_one // 8)
+
+    return salt, h, trailer
+
+
+def verify_pss(
+    enc_msg: ByteString, mod_bits: int, dgst: hashes.MessageDigest, meta: rsa.RsaPssMetadata
+) -> bytes:
+    """
+    Verify the PSS padding and return the salt that was used.
+    """
+
+    if dgst.algorithm != meta.hash_alg:
+        raise ValueError(f"Inconsistent hash algorithms: {dgst.algorithm} != {meta.hash_alg}")
+
+    # 9.1.2/1 and /2 are skipped because the hash is already computed.
+
+    # 9.1.2/3-11)
+    salt, h, trailer = unpad_pss(enc_msg, mod_bits, meta.hash_alg, meta.mgf_alg, len(meta.trailer_field))
+
+    # 9.1.2/4)
+    if trailer != meta.trailer_field:
+        raise ValueError(f"Expected trailer {meta.trailer_field.hex()}, got {trailer.hex()}")
+
+    # 9.1.2/10)
+    if len(salt) != meta.salt_length:
+        raise ValueError(f"Salt length is {len(salt)}, expected {meta.salt_length}")
+
+    # 9.1.2/12)
+    tmp = dgst.new()
+    tmp.update(bytes(8))
+    tmp.update(dgst.value)
+    tmp.update(salt)
+
+    # 9.1.2/13)
+    h2 = tmp.finalize()
+
+    # 9.1.2/14)
+    if h != h2:
+        raise ValueError("Hash mismatch")
+
+    return salt

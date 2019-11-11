@@ -145,3 +145,57 @@ def test_pad_pss() -> None:
     em, meta2 = pss.pad_pss(pub, hashes.sha1(), hashlib.sha1(msg), rsa.PssOptions(salt_length=len(salt)))
     assert em != emsg
     assert meta == meta2
+
+
+def test_verify_pss() -> None:
+    meta = rsa.RsaPssMetadata(
+        key.AsymmetricAlgorithm.RSA,
+        rsa.RsaScheme.PSS,
+        hashes.sha1(),
+        rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, hashes.sha1()),
+        len(salt),
+        b"\xbc",
+    )
+    assert salt == pss.verify_pss(emsg, pub.mod_bits, hashlib.sha1(msg), meta)
+
+    with pytest.raises(ValueError, match=r"Inconsistent hash algorithms"):
+        pss.verify_pss(emsg, pub.mod_bits, hashlib.sha2_256(msg), meta)
+
+    with pytest.raises(ValueError, match=r"Expected trailer"):
+        pss.verify_pss(emsg[:-1] + b'\xee', pub.mod_bits, hashlib.sha1(msg), meta)
+
+    meta_bad_saltlen = rsa.RsaPssMetadata(
+        key.AsymmetricAlgorithm.RSA,
+        rsa.RsaScheme.PSS,
+        hashes.sha1(),
+        rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, hashes.sha1()),
+        15,
+        b"\xbc",
+    )
+    with pytest.raises(ValueError, match=r"Salt length is"):
+        pss.verify_pss(emsg, pub.mod_bits, hashlib.sha1(msg), meta_bad_saltlen)
+
+    with pytest.raises(ValueError, match=r"Hash mismatch"):
+        pss.verify_pss(emsg, pub.mod_bits, hashlib.sha1(msg + b'foo'), meta)
+
+
+def test_unpad_pss() -> None:
+    assert pss.unpad_pss(emsg, pub.mod_bits, hashes.sha1()) == (salt, hashlib.sha1(m2), b'\xbc')
+
+    with pytest.raises(ValueError, match="Bad parameters"):
+        pss.unpad_pss(emsg, 4096, hashes.sha1())
+
+    with pytest.raises(NotImplementedError, match=r"MGF.*not implemented"):
+        pss.unpad_pss(emsg, pub.mod_bits, hashes.sha1(), rsa.OtherMgfMetadata(rsa.MgfAlgorithmId.OTHER, "meta"))
+
+    with pytest.raises(ValueError, match="Nonzero leading bytes"):
+        pss.unpad_pss(emsg, pub.mod_bits - 32, hashes.sha1())
+
+    with pytest.raises(ValueError, match=r"too short"):
+        pss.unpad_pss(emsg, pub.mod_bits, hashes.sha1(), trailer_length=2048)
+
+    with pytest.raises(ValueError, match=r"Nonzero padding bits"):
+        pss.unpad_pss(b'\xe6' + emsg[1:], pub.mod_bits, hashes.sha1())
+
+    with pytest.raises(ValueError, match=r"Bad padding"):
+        pss.unpad_pss(emsg[:60] + b'\x00' + emsg[61:], pub.mod_bits, hashes.sha1())
