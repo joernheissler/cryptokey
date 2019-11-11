@@ -192,13 +192,13 @@ class TextbookRsaPrivateKey(PartialRsaPrivateKey):
         return pow(ciphertext, self._private_exponent, self._modulus)
 
     async def _decrypt_ascii_next(self, ciphertext: str, valid_chars: Set[int]) -> Set[Tuple[int, str]]:
-        results = set()
+        results: Set[Tuple[int, str]] = set()
         value = 0
         if ciphertext[0] == '0':
             # Leading zeros are not valid encodings in this scheme.
             # Exception is "0" itself, if it's valid.
             if 0 in valid_chars:
-                results.add(chr(0))
+                results.add((1, chr(0)))
             return results
 
         for length, digit in enumerate(ciphertext, start=1):
