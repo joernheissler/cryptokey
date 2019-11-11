@@ -260,3 +260,9 @@ def check_vector(vector: HashVector, backend: ModuleType, impl: Type[hashes.Hash
         param = vector.algo.parameters
         dig2 = func(inp, **(asdict(param) if param else {}))
         assert dig2 == dig0
+
+        # test load_digest
+        dig3 = impl.load_digest(vector.algo, out_bytes)
+        assert dig3 == dig0
+        with pytest.raises(ValueError, match=r"Digest size must be"):
+            impl.load_digest(vector.algo, out_bytes[:-1])

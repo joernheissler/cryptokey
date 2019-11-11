@@ -6,7 +6,7 @@ from __future__ import annotations
 from abc import ABCMeta, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from enum import Enum
-from typing import Callable, Mapping, Optional, Tuple, Type, Union, cast
+from typing import ByteString, Callable, Mapping, Optional, Tuple, Type, Union, cast
 
 from .oid import OID, ObjectIdentifier
 
@@ -204,6 +204,9 @@ class MessageDigest:
         self.algorithm = hashobj.algorithm
         self.hashfunc = type(hashobj)
 
+        if len(self.value) != self.algorithm.size:
+            raise ValueError(f"Digest size must be {self.algorithm.size} bytes, got {len(self.value)}")
+
     def new(self) -> HashFunction:
         """
         Create a new instance of the hash function which generated this Digest.
@@ -264,6 +267,15 @@ class HashFunction(metaclass=ABCMeta):
         Example: digest = cryptokey.hashlib.SHA256.hash(b'Message')
         """
         return cls(alg).update(data).finalize()
+
+    @classmethod
+    def load_digest(cls, alg: HashAlgorithm, digest: ByteString) -> MessageDigest:
+        """
+        Load a digest into a MessageDigest object
+
+        Example: digest = HashlibHash.load_digest(hashes.sha2_256(), urandom(32))
+        """
+        return MessageDigest(bytes(digest), cls(alg))
 
     def finalize(self) -> MessageDigest:
         """
