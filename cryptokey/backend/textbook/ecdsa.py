@@ -18,11 +18,11 @@ from asn1crypto import keys as asn1keys
 from asn1crypto.pem import unarmor
 
 from ... import hashes
-from ...math import invert
 from ...public import ecc, ecdsa
 from ...public.key import AsymmetricAlgorithm, MessageDigest, PrivateKey, PublicKey
 from ..hashlib import HashlibHash
 from .ecc import Curve, CurvePoint, NeutralPoint, curve_map
+from .math import invert
 
 
 @dataclass(frozen=False)

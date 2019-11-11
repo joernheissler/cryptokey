@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import InitVar, dataclass, field
 from typing import Optional, Union
 
-from ...math import invert
 from ...public import ecc
+from .math import invert
 
 # Notation follows https://tools.ietf.org/html/rfc6979
 

@@ -18,10 +18,10 @@ from typing import Optional, Sequence, Set, Tuple, Union
 from asn1crypto import keys as asn1keys
 from asn1crypto.pem import unarmor
 
-from ...math import invert, lcm
 from ...public.key import AsymmetricAlgorithm, PrivateKey, PublicKey
 from ...public.rsa import RsaPrivateKey, RsaPublicKey, RsaScheme, RsaSignature, RsaSignatureMetadata
 from ..partial.rsa import PartialRsaPrivateKey, PartialRsaPublicKey
+from .math import invert, lcm
 
 
 @dataclass

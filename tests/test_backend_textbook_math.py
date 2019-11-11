@@ -1,5 +1,5 @@
 import pytest
-from cryptokey import math
+from cryptokey.backend.textbook import math
 
 
 def test_gcdext() -> None:
