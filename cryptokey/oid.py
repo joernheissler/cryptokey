@@ -4,8 +4,7 @@ Implementation of X.660 Object Identifiers.
 from __future__ import annotations
 
 from functools import total_ordering
-from itertools import chain
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Tuple, Union, overload
 
 from asn1crypto.core import ObjectIdentifier as Asn1ObjId
 
@@ -82,7 +81,7 @@ class ObjectIdentifier:
 
     def __contains__(self, item: OidValue) -> bool:
         """
-        Check for prefixes. E.g. `OID-1-3-6-1-4-1 in OID-1-3-6` is True.
+        Check for prefixes. E.g. `OID("1.3.6.1.4.1") in OID("1.3.6")` is True.
         """
         item = to_int_tuple(item)
         return self.value == item[0 : len(self.value)]
@@ -130,7 +129,7 @@ class ObjectIdentifier:
         """
         Python expression that results in the same ObjectIdentifier.
         """
-        return "-".join(chain(("OID",), map(str, self.value)))
+        return 'OID("{}")'.format(".".join(map(str, self.value)))
 
     def __str__(self) -> str:
         """
@@ -138,15 +137,24 @@ class ObjectIdentifier:
         """
         return self.dotted
 
-    def __sub__(self, other: int) -> ObjectIdentifier:
-        """
-        Extend the ObjectIdentifier by a new arc.
-        Example: foo = OID-1-20-300; foo-4000-50000
-        """
-        return ObjectIdentifier(self.value + (int(other),))
+    @overload
+    def __call__(self, *childs: Tuple[int]) -> ObjectIdentifier:
+        """"""
+
+    @overload
+    def __call__(self, childs: str) -> ObjectIdentifier:
+        """"""
+
+    def __call__(self, *childs):
+        """"""
+
+        if len(childs) == 1 and isinstance(childs[0], str):
+            return ObjectIdentifier(self.value + tuple(map(int, childs[0].split("."))))
+
+        return ObjectIdentifier(self.value + childs)
 
 
-# Root object ID, to be used like OID-1-3-6-1-4-1
+# Root object ID, to be used like OID("1.3.6.1.4.1")
 OID = ObjectIdentifier(())
 
 # fmt: off

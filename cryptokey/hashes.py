@@ -4,24 +4,22 @@ This module defines algorithms and interfaces for cryptographic hash functions.
 from __future__ import annotations
 
 from abc import ABCMeta, abstractmethod
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import ByteString, Callable, Mapping, Optional, Tuple, Type, Union, cast
 
 from .oid import OID, ObjectIdentifier
 
-# fmt: off
 # https://csrc.nist.gov/projects/computer-security-objects-register/algorithm-registration#Hash
-OID_NIST_HASHES = OID-2-16-840-1-101-3-4-2
+OID_NIST_HASHES = OID("2.16.840.1.101.3.4.2")
 
 # https://tools.ietf.org/html/rfc7693.html
-OID_KUDELSKI_HASH = OID-1-3-6-1-4-1-1722-12-2
-OID_BLAKE2B = OID_KUDELSKI_HASH-1
-OID_BLAKE2S = OID_KUDELSKI_HASH-2
-# fmt: on
+OID_KUDELSKI_HASH = OID("1.3.6.1.4.1.1722.12.2")
+OID_BLAKE2B = OID_KUDELSKI_HASH(1)
+OID_BLAKE2S = OID_KUDELSKI_HASH(2)
 
 
-@dataclass
+@dataclass(frozen=True)
 class Blake2Params:
     """
     Parameters for blake2 algorithm.
@@ -37,11 +35,7 @@ def blake2b_oid(alg: HashAlgorithm) -> ObjectIdentifier:
     length = cast(Blake2Params, alg.parameters).length
     if length % 4:
         raise ValueError("Blake2 only has OIDs for multiples of 32 bit")
-    suffix = length // 4
-
-    # fmt: off
-    return OID_BLAKE2B-suffix
-    # fmt: on
+    return OID_BLAKE2B(length // 4)
 
 
 def blake2s_oid(alg: HashAlgorithm) -> ObjectIdentifier:
@@ -51,11 +45,7 @@ def blake2s_oid(alg: HashAlgorithm) -> ObjectIdentifier:
     length = cast(Blake2Params, alg.parameters).length
     if length % 4:
         raise ValueError("Blake2 only has OIDs for multiples of 32 bit")
-    suffix = length // 4
-
-    # fmt: off
-    return OID_BLAKE2S-suffix
-    # fmt: on
+    return OID_BLAKE2S(length // 4)
 
 
 def blake2_size(alg: HashAlgorithm) -> int:
@@ -65,7 +55,7 @@ def blake2_size(alg: HashAlgorithm) -> int:
     return cast(Blake2Params, alg.parameters).length
 
 
-@dataclass
+@dataclass(frozen=True)
 class ShakeLenParams:
     """
     Parameters for shake algorithm.
@@ -130,28 +120,26 @@ _algos: Mapping[
         Optional[Type[HashParameters]],
     ],
 ] = {
-    # fmt: off
     "BLAKE2B": (blake2b_oid, blake2_size, Blake2Params),
     "BLAKE2S": (blake2s_oid, blake2_size, Blake2Params),
-    "MD5": (OID-1-2-840-113549-2-5, 16, None),
-    "RIPEMD_160": (OID-1-3-36-3-2-1, 20, None),
-    "SHA1": (OID-1-3-14-3-2-26, 20, None),
-    "SHA2_224": (OID_NIST_HASHES-4, 28, None),
-    "SHA2_256": (OID_NIST_HASHES-1, 32, None),
-    "SHA2_384": (OID_NIST_HASHES-2, 48, None),
-    "SHA2_512": (OID_NIST_HASHES-3, 64, None),
-    "SHA2_512_224": (OID_NIST_HASHES-5, 28, None),
-    "SHA2_512_256": (OID_NIST_HASHES-6, 32, None),
-    "SHA3_224": (OID_NIST_HASHES-7, 28, None),
-    "SHA3_256": (OID_NIST_HASHES-8, 32, None),
-    "SHA3_384": (OID_NIST_HASHES-9, 48, None),
-    "SHA3_512": (OID_NIST_HASHES-10, 64, None),
-    "SHAKE_128": (OID_NIST_HASHES-11, 16, None),
-    "SHAKE_128_LEN": (OID_NIST_HASHES-17, shake_len_size, ShakeLenParams),
-    "SHAKE_256": (OID_NIST_HASHES-12, 32, None),
-    "SHAKE_256_LEN": (OID_NIST_HASHES-18, shake_len_size, ShakeLenParams),
+    "MD5": (OID("1.2.840.113549.2.5"), 16, None),
+    "RIPEMD_160": (OID("1.3.36.3.2.1"), 20, None),
+    "SHA1": (OID("1.3.14.3.2.26"), 20, None),
+    "SHA2_224": (OID_NIST_HASHES(4), 28, None),
+    "SHA2_256": (OID_NIST_HASHES(1), 32, None),
+    "SHA2_384": (OID_NIST_HASHES(2), 48, None),
+    "SHA2_512": (OID_NIST_HASHES(3), 64, None),
+    "SHA2_512_224": (OID_NIST_HASHES(5), 28, None),
+    "SHA2_512_256": (OID_NIST_HASHES(6), 32, None),
+    "SHA3_224": (OID_NIST_HASHES(7), 28, None),
+    "SHA3_256": (OID_NIST_HASHES(8), 32, None),
+    "SHA3_384": (OID_NIST_HASHES(9), 48, None),
+    "SHA3_512": (OID_NIST_HASHES(10), 64, None),
+    "SHAKE_128": (OID_NIST_HASHES(11), 16, None),
+    "SHAKE_128_LEN": (OID_NIST_HASHES(17), shake_len_size, ShakeLenParams),
+    "SHAKE_256": (OID_NIST_HASHES(12), 32, None),
+    "SHAKE_256_LEN": (OID_NIST_HASHES(18), shake_len_size, ShakeLenParams),
     "_TEST_DUMMY": (None, 3, None),
-    # fmt: on
 }
 
 # MyPy doesn't work with list(_algos.keys())
@@ -185,7 +173,7 @@ _hash_oids = {getattr(HashAlgorithmId, k): algo[0] for k, algo in _algos.items()
 _hash_sizes = {getattr(HashAlgorithmId, k): algo[1] for k, algo in _algos.items()}
 
 
-@dataclass
+@dataclass(frozen=True)
 class MessageDigest:
     """
     Result from a hash function.
@@ -196,16 +184,16 @@ class MessageDigest:
     """
 
     value: bytes
-    hashobj: InitVar[HashFunction]
-    algorithm: HashAlgorithm = field(init=False)
-    hashfunc: Type[HashFunction] = field(init=False, compare=False, repr=False)
+    algorithm: HashAlgorithm
+    hashfunc: Type[HashFunction] = field(compare=False, repr=False)
 
-    def __post_init__(self, hashobj: HashFunction) -> None:
-        self.algorithm = hashobj.algorithm
-        self.hashfunc = type(hashobj)
+    @classmethod
+    def create(cls, value: ByteString, hashobj: HashFunction) -> MessageDigest:
+        alg = hashobj.algorithm
+        if len(value) != alg.size:
+            raise ValueError(f"Digest size must be {alg.size} bytes, got {len(value)}")
 
-        if len(self.value) != self.algorithm.size:
-            raise ValueError(f"Digest size must be {self.algorithm.size} bytes, got {len(self.value)}")
+        return cls(bytes(value), alg, type(hashobj))
 
     def new(self) -> HashFunction:
         """
@@ -248,7 +236,6 @@ class MessageDigest:
         return len(self.value)
 
 
-@dataclass(eq=False)
 class HashFunction(metaclass=ABCMeta):
     """
     Represents a hash function like SHA2-256; each instance of this class is used to calculate one
@@ -256,7 +243,14 @@ class HashFunction(metaclass=ABCMeta):
     """
 
     algorithm: HashAlgorithm
-    _digest: Optional[MessageDigest] = field(default=None, init=False)
+    _digest: Optional[MessageDigest] = None
+
+    def __init__(self, algorithm: HashAlgorithm) -> None:
+        """
+        Args:
+            algorithm: Hash algorithm
+        """
+        self.algorithm = algorithm
 
     @classmethod
     def hash(cls, alg: HashAlgorithm, data: bytes) -> MessageDigest:
@@ -275,14 +269,14 @@ class HashFunction(metaclass=ABCMeta):
 
         Example: digest = HashlibHash.load_digest(hashes.sha2_256(), urandom(32))
         """
-        return MessageDigest(bytes(digest), cls(alg))
+        return MessageDigest.create(bytes(digest), cls(alg))
 
     def finalize(self) -> MessageDigest:
         """
         Finalize the digest computation and return the MessageDigest.
         """
         if self._digest is None:
-            self._digest = MessageDigest(self._finalize(), self)
+            self._digest = MessageDigest.create(self._finalize(), self)
         return self._digest
 
     @abstractmethod
@@ -293,7 +287,7 @@ class HashFunction(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def update(self, data: bytes) -> HashFunction:
+    def update(self, data: ByteString) -> HashFunction:
         """
         Update state with `data` and return self.
         """

@@ -17,7 +17,7 @@ CurveId = Enum('CurveId', [
 # fmt: on
 
 
-@dataclass
+@dataclass(frozen=True)
 class CurvePoint:
     curve_id: CurveId
     x: int

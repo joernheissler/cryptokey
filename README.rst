@@ -1,7 +1,7 @@
 CryptoKey
 =========
 
-Python (>= 3.7) library for asymmetric cryptography with algorithms such as RSA and ECC.
+Python (>= 3.8) library for asymmetric cryptography with algorithms such as RSA and ECC.
 
 Various backends implement wrappers around other crypto libraries (such as https://cryptography.io/)
 and makes them available using a unified API. The actual cryptographic operations are carried out
@@ -27,6 +27,25 @@ specific salt.
 
 One stated goal is to provide interfaces for unsafe operations too.
 If you want to shoot yourself in the foot, here's the tool to do it!
+
+Backends
+========
+* `cryptography <https://github.com/joernheissler/cryptokey-cryptography>`__ which uses
+  https://cryptography.io/ and thus OpenSSL. Recommended for most users.
+
+* `hashlib <https://github.com/joernheissler/cryptokey-hashlib>`__ implements hash operations using
+  https://docs.python.org/3/library/hashlib.html.
+
+* `oscrypto <https://github.com/joernheissler/cryptokey-oscrypto>`__ uses https://github.com/wbond/asn1crypto
+  which in turn uses OS provided crypto libraries without requiring a C compiler.
+
+* `partial <https://github.com/joernheissler/cryptokey-partial>`__ provides partial implementations of
+  many functions and can be used to build another backend on top of it.
+
+* `textboox <https://github.com/joernheissler/cryptokey-textbook>`__ is a complete but deliberately insecure
+  backend that implements all crypto operations without using other libraries. Can be used for doing crypto
+  related homework or for learning how to implement timing attacks.
+
 
 Examples
 ========
@@ -85,6 +104,3 @@ Security
 ========
 This library is supposed to be just as (in)secure as the used backend.
 If in doubt, use the `cryptography` backend, which builds upon OpenSSL.
-
-The `textbook` backend is deliberately insecure and should not be used for
-real applications.

@@ -1,4 +1,7 @@
+from asyncio import run
+
 import pytest
+from cryptokey import hashes
 from cryptokey.public import rsa
 from cryptokey.public.key import AsymmetricAlgorithm
 
@@ -68,9 +71,6 @@ def test_pss_options() -> None:
 
 
 class PubKey(rsa.RsaPublicKey):
-    export_public_der = None
-    export_public_openssh = None
-    export_public_pem = None
     from_key = None
     public_exponent = 65537
 
@@ -91,6 +91,46 @@ def test_pubkey() -> None:
             pub = PubKey(i * 8 + j)
             assert pub.modlen == i + 1
             assert pub.mod_bits == i * 8 + j
+
+
+class PrivateKey(rsa.RsaPrivateKey):
+    def __init__(self, bits: int) -> None:
+        self._public = PubKey(bits)
+
+    @property
+    def public(self) -> PubKey:
+        return self._public
+
+    async def sign(self, msg: bytes) -> rsa.RsaSignature:
+        return rsa.RsaSignature(
+            self.public,
+            rsa.RsaV15Metadata(AsymmetricAlgorithm.RSA, rsa.RsaScheme.PKCS1v1_5, hashes.sha2_256()),
+            0,
+            b"",
+        )
+
+
+def test_privatekey() -> None:
+    priv = PrivateKey(1024)
+    assert priv.sig_meta == rsa.RsaPssMetadata(
+        AsymmetricAlgorithm.RSA,
+        rsa.RsaScheme.PSS,
+        hashes.sha2_256(),
+        rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, hashes.sha2_256()),
+        1024 // 8 - 32 - 2,
+        b"\xbc",
+    )
+
+    priv.default_scheme = rsa.RsaScheme.PKCS1v1_5
+    assert priv.sig_meta == rsa.RsaV15Metadata(
+        AsymmetricAlgorithm.RSA, rsa.RsaScheme.PKCS1v1_5, hashes.sha2_256(),
+    )
+
+    priv.default_scheme = rsa.RsaScheme.RAW
+    with pytest.raises(Exception):
+        priv.sig_meta
+
+    assert run(priv.sign(b"")).algorithm == AsymmetricAlgorithm.RSA
 
 
 def test_signature() -> None:
@@ -119,3 +159,73 @@ def test_signature() -> None:
         key = PubKey(2048)
         key._modulus -= 1000
         rsa.RsaSignature.from_int(key=key, meta=meta, value=((1 << 2048) - 10))
+
+
+def test_calculate_pss_salt_len() -> None:
+    with pytest.raises(ValueError, match="dgst_len"):
+        rsa.calculate_pss_salt_len(1024, rsa.PssOptions(), -32)
+
+    with pytest.raises(ValueError, match="em_bits"):
+        rsa.calculate_pss_salt_len(0, rsa.PssOptions(), 32)
+
+    with pytest.raises(ValueError, match="Maximum"):
+        rsa.calculate_pss_salt_len(128, rsa.PssOptions(), 128)
+
+    assert rsa.calculate_pss_salt_len(1024, rsa.PssOptions(), 32) == 128 - 32 - 2
+    assert rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt=bytes(17)), 32) == 17
+    assert (
+        rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=rsa.PSS_SALT_LEN_MAX), 32) == 128 - 32 - 2
+    )
+    assert rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=rsa.PSS_SALT_LEN_HASH), 32) == 32
+    assert (
+        rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=rsa.PSS_SALT_LEN_HASH), 120)
+        == 128 - 120 - 2
+    )
+
+    with pytest.raises(ValueError, match="salt_length"):
+        rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=-15), 32)
+
+    assert rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=15), 32) == 15
+    assert rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=66), 32) == 66
+
+    with pytest.raises(ValueError, match="Requested"):
+        rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt=bytes(200)), 32)
+
+    with pytest.raises(ValueError, match="Requested"):
+        rsa.calculate_pss_salt_len(1024, rsa.PssOptions(salt_length=200), 32)
+
+
+def test_parse_pss_options() -> None:
+    def_hash = hashes.sha2_256()
+    pub = PubKey(1024)
+    with pytest.raises(TypeError, match="conflicting hash algorithms"):
+        rsa.parse_pss_options(
+            pub, def_hash, rsa.PssOptions(hash_alg=hashes.sha1()), dgst_hash_alg=hashes.sha2_256()
+        )
+
+    assert rsa.parse_pss_options(pub, def_hash).hash_alg == hashes.sha2_256()
+    assert rsa.parse_pss_options(pub, default_hash_alg=hashes.md5()).hash_alg == hashes.md5()
+    assert rsa.parse_pss_options(pub, def_hash, rsa.PssOptions(hash_alg=hashes.md5())).hash_alg == hashes.md5()
+    assert rsa.parse_pss_options(pub, def_hash, dgst_hash_alg=hashes.md5()).hash_alg == hashes.md5()
+
+    mgf_md5 = rsa.MgfAlgorithm(rsa.MgfAlgorithmId.MGF1, rsa.Mgf1Parameters(hashes.md5()))
+    mgf_md5_meta = rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, hashes.md5())
+    mgf_sha2_256_meta = rsa.Mgf1Metadata(rsa.MgfAlgorithmId.MGF1, hashes.sha2_256())
+    assert rsa.parse_pss_options(pub, def_hash).mgf_alg == mgf_sha2_256_meta
+    assert rsa.parse_pss_options(pub, default_hash_alg=hashes.md5()).mgf_alg == mgf_md5_meta
+    assert rsa.parse_pss_options(pub, def_hash, rsa.PssOptions(mgf_alg=mgf_md5)).mgf_alg == mgf_md5_meta
+    assert (
+        mgf_sha2_256_meta
+        == rsa.parse_pss_options(
+            pub, def_hash, rsa.PssOptions(mgf_alg=rsa.MgfAlgorithm(rsa.MgfAlgorithmId.MGF1))
+        ).mgf_alg
+    )
+
+    params = "params"
+    test_alg = rsa.MgfAlgorithm(rsa.MgfAlgorithmId.OTHER, params)
+    parsed = rsa.parse_pss_options(pub, def_hash, rsa.PssOptions(mgf_alg=test_alg)).mgf_alg
+    assert isinstance(parsed, rsa.OtherMgfMetadata)
+    assert parsed.params is params
+
+    with pytest.raises(NotImplementedError):
+        rsa.parse_pss_options(pub, def_hash, rsa.PssOptions(mgf_alg=rsa.MgfAlgorithm("foo", "bar")))

@@ -13,9 +13,14 @@ from .key import AsymmetricAlgorithm, PrivateKey, PublicKey, Signature, Signatur
 
 
 class UniqueKey(Enum):
-    DEFAULT = auto()  # use library default
-    RANDOM = auto()  # generate random k
-    RFC6979 = auto()  # generate k in accordance with rfc6979
+    # use library default
+    DEFAULT = auto()
+
+    # generate random k
+    RANDOM = auto()
+
+    # generate k in accordance with rfc6979
+    RFC6979 = auto()
 
 
 UniqueKeyParam = Union[UniqueKey, int]
@@ -30,7 +35,7 @@ class EcdsaSignatureMetadata(SignatureMetadata):
     hash_alg: HashAlgorithm
 
 
-@dataclass
+@dataclass(frozen=True)
 class EcdsaSignature(Signature):
     key: EccPublicKey = field(repr=False)
     meta: EcdsaSignatureMetadata
@@ -38,28 +43,25 @@ class EcdsaSignature(Signature):
     s: int
     der: bytes
 
-    def __init__(
-        self,
+    @classmethod
+    def create(
+        cls,
         key: EccPublicKey,
         meta: EcdsaSignatureMetadata,
         r: Optional[int] = None,
         s: Optional[int] = None,
         der: Optional[ByteString] = None,
     ) -> None:
-        self.key = key
-        self.meta = meta
+        """"""
 
         if not r and not s and der:
             val = DSASignature.load(der)
-            self.r = val["r"].native
-            self.s = val["s"].native
-            self.der = bytes(der)
-        elif r and s and not der:
-            self.r = r
-            self.s = s
-            self.der = DSASignature({"r": self.r, "s": self.s}).dump()
-        else:
-            raise ValueError("Bad parameters")
+            return cls(key, meta, val["r"].native, val["s"].native, bytes(der))
+
+        if r and s and not der:
+            return cls(key, meta, r, s, DSASignature({"r": r, "s": s}).dump())
+
+        raise ValueError("Bad parameters")
 
 
 class EccPublicKey(PublicKey):
@@ -73,6 +75,7 @@ class EccPublicKey(PublicKey):
         """
 
     @property
+    @abstractmethod
     def point(self) -> CurvePoint:
         """
         Public key's point
@@ -89,11 +92,11 @@ class EccPrivateKey(PrivateKey):
     default_hash_algorithm: HashAlgorithm = sha2_256()
 
     @classmethod
-    @abstractmethod
     def from_key(cls, key: PrivateKey) -> EccPrivateKey:
         """
         Create a backend key instance from another key.
         """
+        raise NotImplementedError
 
     @property
     @abstractmethod
@@ -117,25 +120,23 @@ class EccPrivateKey(PrivateKey):
         """
 
     @property
-    @abstractmethod
     def private_exponent(self) -> int:
         """
         Private ECC exponent (d).
         """
+        raise NotImplementedError
 
-    @abstractmethod
     async def sign_digest_dsa(
         self, digest: MessageDigest, k: UniqueKeyParam = UniqueKey.DEFAULT
     ) -> EcdsaSignature:
-        """
-        """
+        """"""
+        raise NotImplementedError
 
-    @abstractmethod
     async def sign_dsa(
         self, msg: bytes, hash_alg: Optional[HashAlgorithm] = None, k: UniqueKeyParam = UniqueKey.DEFAULT
     ) -> EcdsaSignature:
-        """
-        """
+        """"""
+        raise NotImplementedError
 
     async def sign_digest(self, digest: MessageDigest) -> EcdsaSignature:
         return await self.sign_digest_dsa(digest)
